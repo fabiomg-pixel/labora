@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" fill="#030a03"/>
+  <rect x="4" y="4" width="184" height="184" fill="none" stroke="#39ff14" stroke-width="2"/>
+  <text x="96" y="115" font-family="monospace" font-size="80" text-anchor="middle" fill="#39ff14">🔬</text>
+  <text x="96" y="160" font-family="monospace" font-size="18" font-weight="bold" text-anchor="middle" fill="#39ff14" letter-spacing="4">LABORA</text>
+</svg>

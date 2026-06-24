@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#030a03">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<title>LABORA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#030a03;--bg2:#050f05;--card:#0a1a0a;--card2:#0d200d;
+  --line:#152815;--line2:#1e4a1e;
+  --green:#39ff14;--green-d:#20a010;--green-dim:#0b2a0b;
+  --amber:#ffaa00;--amber-d:#a06800;--amber-dim:#1a1000;
+  --cyan:#00ffcc;--cyan-d:#009980;--cyan-dim:#001a14;
+  --red:#ff3333;--red-d:#991111;
+  --white:#dff0df;--txt:#98c898;--txt2:#5a8a5a;--txt3:#2e5a2e;
+  --mono:'JetBrains Mono',monospace;
+}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--mono);font-size:13px;overflow:hidden;-webkit-tap-highlight-color:transparent}
+body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;position:relative}
+/* scanlines */
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.07) 2px,rgba(0,0,0,.07) 4px)}
+
+/* ── UTILS ─────────────────────────── */
+.hide{display:none!important}
+.green{color:var(--green)}
+.amber{color:var(--amber)}
+.cyan{color:var(--cyan)}
+.red{color:var(--red)}
+.dim{color:var(--txt3)}
+.mono{font-family:var(--mono)}
+.upper{text-transform:uppercase;letter-spacing:.05em}
+.bold{font-weight:700}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes glow{0%,100%{box-shadow:0 0 4px rgba(57,255,20,.2)}50%{box-shadow:0 0 12px rgba(57,255,20,.5)}}
+@keyframes amber-pulse{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 10px rgba(255,170,0,.35)}}
+@keyframes scanin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.cursor-blink::after{content:'█';animation:blink 1s step-end infinite;color:var(--green);font-size:.8em}
+.anim-in{animation:scanin .18s ease-out forwards}
+
+/* ── HEADER ────────────────────────── */
+#hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;
+  border-bottom:1px solid var(--line);background:var(--bg);flex-shrink:0;position:relative}
+#hdr-left{display:flex;flex-direction:column;gap:2px}
+#hdr-logo{font-size:16px;font-weight:700;color:var(--green);letter-spacing:.15em}
+#hdr-char{font-size:10px;color:var(--txt2);letter-spacing:.04em;text-transform:uppercase}
+#hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+#hdr-credits{font-size:13px;font-weight:700;color:var(--amber)}
+#hdr-clock{font-size:10px;color:var(--txt3)}
+/* xp micro bar */
+#hdr-xpbar{position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--green-dim)}
+#hdr-xpfill{height:100%;background:var(--green);transition:width .9s cubic-bezier(.4,0,.2,1)}
+
+/* ── NAV ───────────────────────────── */
+#nav{display:flex;border-top:1px solid var(--line);background:var(--bg);flex-shrink:0}
+.tab{flex:1;padding:9px 2px 7px;text-align:center;font-family:var(--mono);font-size:9px;
+  font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3);
+  cursor:pointer;border:none;background:none;position:relative;transition:.12s}
+.tab.active{color:var(--green)}
+.tab.active::after{content:'';position:absolute;top:0;left:15%;right:15%;height:2px;background:var(--green)}
+.tab-badge{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);margin-left:3px;vertical-align:middle;animation:amber-pulse 2s ease-in-out infinite}
+
+/* ── CONTENT ───────────────────────── */
+#content{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+#content::-webkit-scrollbar{width:3px}
+#content::-webkit-scrollbar-thumb{background:var(--green-dim);border-radius:2px}
+
+/* ── SECTION DIVIDERS ──────────────── */
+.sec{display:flex;align-items:center;gap:8px;font-size:9px;font-weight:700;
+  color:var(--txt3);letter-spacing:.1em;text-transform:uppercase;margin:2px 0 0}
+.sec::after{content:'';flex:1;height:1px;background:var(--line)}
+
+/* ── TERM CARDS ────────────────────── */
+.tc{background:var(--card);border:1px solid var(--line);border-radius:3px;padding:11px 13px;position:relative;overflow:hidden}
+.tc::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(57,255,20,.025) 0%,transparent 60%)}
+.tc.amber{border-color:var(--amber-d);background:#0d0c03}
+.tc.amber::before{background:linear-gradient(180deg,rgba(255,170,0,.03) 0%,transparent 60%)}
+.tc.cyan{border-color:var(--cyan-d);background:var(--cyan-dim)}
+.tc.glow{animation:glow 3s ease-in-out infinite}
+.tc.collectible{border-color:var(--amber-d);animation:amber-pulse 2s ease-in-out infinite}
+.tc-tag{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  padding:2px 5px;border:1px solid currentColor;border-radius:1px;margin-bottom:6px;display:inline-block}
+.tc-tag.g{color:var(--green)}
+.tc-tag.a{color:var(--amber)}
+.tc-tag.c{color:var(--cyan)}
+.tc-title{font-size:12px;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:.04em;line-height:1.3}
+.tc-sub{font-size:10px;color:var(--txt2);margin-top:3px;line-height:1.4}
+
+/* ── PROGRESS TEXT BAR ─────────────── */
+.pbar-row{display:flex;align-items:center;gap:8px;margin-top:7px}
+.pbar-txt{font-size:11px;color:var(--green);letter-spacing:-.5px;flex-shrink:0}
+.pbar-lbl{font-size:10px;color:var(--txt2)}
+.pbar-reward{font-size:10px;color:var(--amber);font-weight:700;margin-left:auto}
+
+/* ── CSS XP BAR ────────────────────── */
+.xpbar{height:5px;background:var(--green-dim);border-radius:1px;overflow:hidden;margin:6px 0}
+.xpfill{height:100%;background:var(--green);border-radius:1px;transition:width .9s}
+.xpfill.am{background:var(--amber)}
+.xpfill.cy{background:var(--cyan)}
+
+/* ── HABIT ITEMS ───────────────────── */
+.habit-row{display:flex;align-items:center;gap:9px;padding:9px 11px;
+  background:var(--bg2);border:1px solid var(--line);border-radius:3px;cursor:pointer;transition:.1s;position:relative}
+.habit-row.done{opacity:.6;border-color:var(--green-dim)}
+.habit-row.done .habit-nm{text-decoration:line-through;color:var(--txt3)}
+.habit-row:active{transform:scale(.99)}
+.habit-chk{width:20px;height:20px;border:1.5px solid var(--txt3);border-radius:2px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;
+  color:var(--green);font-weight:700;transition:.1s}
+.habit-row.done .habit-chk{background:var(--green-dim);border-color:var(--green-d);color:var(--green)}
+.habit-em{font-size:20px;flex-shrink:0;line-height:1}
+.habit-nm{font-size:12px;font-weight:700;color:var(--white);flex:1;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-transform:uppercase;letter-spacing:.03em}
+.habit-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0}
+.habit-streak{font-size:10px;font-weight:700;color:var(--amber)}
+.habit-days{font-size:9px;color:var(--txt3)}
+.habit-skip-btn{font-size:9px;color:var(--txt3);background:none;border:none;cursor:pointer;
+  font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;padding:2px 4px;
+  border:1px solid var(--line);border-radius:2px;margin-top:2px}
+.habit-skip-btn:hover{color:var(--amber);border-color:var(--amber-d)}
+
+/* ── LEVEL CARD ────────────────────── */
+.lv-card{display:flex;align-items:center;gap:12px;padding:12px;
+  background:var(--card);border:1px solid var(--green-d);border-radius:3px;position:relative}
+.lv-card.warn{border-color:var(--amber-d);background:#0d0c03}
+.lv-card.bloom{border-color:var(--cyan-d)}
+.lv-em{font-size:42px;line-height:1;flex-shrink:0}
+.lv-info{flex:1;min-width:0}
+.lv-name{font-size:13px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.06em}
+.lv-name .st{color:var(--amber);font-size:11px}
+.lv-name .st-bloom{color:var(--cyan);font-size:11px}
+.lv-xp{font-size:10px;color:var(--txt2);margin:3px 0 5px}
+.lv-status{font-size:10px;margin-top:6px;line-height:1.4;color:var(--amber)}
+.lv-status.bloom{color:var(--cyan)}
+
+/* ── CAREER TRACK ──────────────────── */
+.ct-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)}
+.ct-item:last-child{border:none}
+.ct-icon{font-size:16px;width:22px;text-align:center;flex-shrink:0}
+.ct-nm{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;flex:1}
+.ct-item.done .ct-nm{color:var(--txt3)}
+.ct-item.current .ct-nm{color:var(--green)}
+.ct-item.locked .ct-nm{color:var(--txt3);opacity:.4}
+.ct-bar{width:54px;height:3px;background:var(--green-dim);border-radius:1px;overflow:hidden;flex-shrink:0}
+.ct-fill{height:100%;background:var(--green);border-radius:1px}
+.ct-item.done .ct-fill{width:100%;background:var(--txt3)}
+.ct-item.current .ct-fill{background:var(--green)}
+.ct-item.locked .ct-fill{width:0}
+.ct-xp{font-size:9px;color:var(--txt3);white-space:nowrap;min-width:48px;text-align:right;flex-shrink:0}
+.ct-check{font-size:10px;color:var(--txt3);flex-shrink:0;width:14px;text-align:center}
+.ct-item.done .ct-check{color:var(--green-d)}
+.ct-item.current .ct-check{color:var(--green);animation:blink 1s step-end infinite}
+
+/* ── STATS GRID ────────────────────── */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sb{background:var(--card);border:1px solid var(--line);border-radius:3px;padding:9px 11px}
+.sb-val{font-size:22px;font-weight:700;color:var(--white)}
+.sb-lbl{font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.sb.g .sb-val{color:var(--green)}
+.sb.a .sb-val{color:var(--amber)}
+
+/* ── QUEST CARDS ───────────────────── */
+.qc{padding:11px 13px;background:var(--card);border:1px solid var(--line);border-radius:3px}
+.qc.collectible{border-color:var(--amber-d);animation:amber-pulse 2s ease-in-out infinite}
+.qc.done{opacity:.55;border-color:var(--line)}
+.q-tag{font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);margin-bottom:4px}
+.q-nm{font-size:12px;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:.03em}
+.q-desc{font-size:10px;color:var(--txt2);margin:3px 0 8px;line-height:1.4}
+.q-footer{display:flex;align-items:center;gap:8px}
+.q-reward{font-size:11px;font-weight:700;color:var(--amber)}
+.q-timer{font-size:9px;color:var(--txt3);margin-left:auto}
+
+/* ── STORY LIST ────────────────────── */
+.sq-item{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:1px solid var(--line)}
+.sq-item:last-child{border:none}
+.sq-dot{width:16px;height:16px;border:1.5px solid var(--txt3);border-radius:2px;flex-shrink:0;
+  margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
+.sq-dot.done{background:var(--green-dim);border-color:var(--green-d);color:var(--green)}
+.sq-dot.active{border-color:var(--amber-d);color:var(--amber);animation:amber-pulse 2s ease-in-out infinite}
+.sq-dot.locked{opacity:.45}
+.sq-body{flex:1}
+.sq-nm{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--white)}
+.sq-nm.done{color:var(--txt3);text-decoration:line-through}
+.sq-nm.locked{color:var(--txt2);opacity:.55}
+.sq-desc{font-size:9px;color:var(--txt2);margin-top:1px;line-height:1.3}
+.sq-rw{font-size:9px;color:var(--amber);margin-top:2px}
+
+/* ── SHOP ──────────────────────────── */
+.shop-item{display:flex;align-items:center;gap:9px;padding:9px 11px;
+  background:var(--bg2);border:1px solid var(--line);border-radius:3px}
+.shop-item.owned{border-color:var(--green-dim);opacity:.6}
+.shop-em{font-size:22px;flex-shrink:0}
+.shop-body{flex:1}
+.shop-nm{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--white)}
+.shop-desc{font-size:9px;color:var(--txt2);margin-top:1px}
+.shop-right{flex-shrink:0;text-align:right}
+.shop-cost{font-size:11px;font-weight:700;color:var(--amber)}
+.shop-owned-tag{font-size:9px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.05em}
+
+/* ── CHAR PROFILE ──────────────────── */
+.cp-box{border:1px solid var(--green-d);border-radius:3px;padding:13px;background:var(--card)}
+.cp-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.cp-em{font-size:48px;line-height:1}
+.cp-info{flex:1}
+.cp-name{font-size:14px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.08em}
+.cp-spec{font-size:10px;color:var(--cyan);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.cp-level{font-size:11px;color:var(--txt2);margin-top:4px}
+.cp-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+.badge{font-size:9px;font-weight:700;padding:2px 7px;border:1px solid currentColor;
+  border-radius:1px;text-transform:uppercase;letter-spacing:.06em}
+.badge.g{color:var(--green)}
+.badge.a{color:var(--amber)}
+.badge.c{color:var(--cyan)}
+
+/* ── HEATMAP ───────────────────────── */
+.heatmap{display:grid;grid-template-columns:repeat(13,1fr);gap:3px;margin:8px 0}
+.hc{aspect-ratio:1;border-radius:1px;background:var(--card)}
+.hc.l1{background:rgba(57,255,20,.15)}
+.hc.l2{background:rgba(57,255,20,.35)}
+.hc.l3{background:rgba(57,255,20,.65)}
+.hc.l4{background:rgba(57,255,20,.9)}
+.heat-legend{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--txt3);margin-top:4px}
+.heat-legend .hc{width:10px;height:10px;flex-shrink:0}
+
+/* ── H-INDEX BADGE ─────────────────── */
+.h-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;
+  border:1px solid var(--cyan-d);border-radius:2px;font-size:13px;font-weight:700;color:var(--cyan);
+  text-transform:uppercase;letter-spacing:.04em;background:var(--cyan-dim)}
+
+/* ── BUTTONS ───────────────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  padding:8px 14px;border-radius:3px;font-family:var(--mono);font-size:11px;
+  font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+  border:1px solid currentColor;transition:.1s}
+.btn:active{transform:scale(.97)}
+.btn.g{color:var(--green);background:var(--green-dim);border-color:var(--green-d)}
+.btn.a{color:var(--bg);background:var(--amber);border-color:var(--amber)}
+.btn.ghost{color:var(--txt2);background:transparent;border-color:var(--line)}
+.btn.danger{color:var(--red);background:transparent;border-color:var(--red-d)}
+.btn.full{width:100%;margin-top:6px}
+.btn:disabled{opacity:.3;cursor:default;pointer-events:none}
+
+/* ── FAB ───────────────────────────── */
+#fab{position:fixed;bottom:62px;right:16px;width:46px;height:46px;border-radius:3px;
+  background:var(--green);border:none;font-size:22px;color:var(--bg);cursor:pointer;
+  z-index:100;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 20px rgba(57,255,20,.45);font-family:var(--mono);font-weight:700;transition:.1s}
+#fab:active{transform:scale(.93);box-shadow:none}
+
+/* ── OVERLAY/SHEET ─────────────────── */
+.overlay{position:fixed;inset:0;background:rgba(3,10,3,.88);z-index:200;
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(3px)}
+.overlay.show{opacity:1;pointer-events:all}
+.sheet{width:100%;max-width:480px;background:var(--bg2);border-top:2px solid var(--green-d);
+  border-radius:8px 8px 0 0;padding:18px;max-height:82vh;overflow-y:auto;
+  transform:translateY(24px);transition:transform .22s}
+.overlay.show .sheet{transform:translateY(0)}
+.sheet h3{font-size:13px;font-weight:700;color:var(--green);text-transform:uppercase;
+  letter-spacing:.08em;margin-bottom:14px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:9px;color:var(--txt2);text-transform:uppercase;
+  letter-spacing:.06em;margin-bottom:4px}
+.field input,.field select{width:100%;background:var(--bg);border:1px solid var(--line);
+  border-radius:3px;color:var(--white);font-family:var(--mono);font-size:12px;
+  padding:9px 11px;outline:none;transition:.15s}
+.field input:focus,.field select:focus{border-color:var(--green-d)}
+.field select option{background:var(--bg)}
+.sep{height:1px;background:var(--line);margin:14px 0}
+.help{font-size:10px;color:var(--txt3);line-height:1.5;margin-bottom:9px}
+.days-row{display:flex;gap:5px;flex-wrap:wrap}
+.day-btn{padding:5px 8px;border:1px solid var(--line);border-radius:3px;background:var(--bg2);
+  cursor:pointer;font-family:var(--mono);font-size:10px;font-weight:700;color:var(--txt2);
+  text-transform:uppercase;transition:.1s}
+.day-btn.on{border-color:var(--green-d);background:var(--green-dim);color:var(--green)}
+.emoji-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.em-btn{font-size:19px;padding:5px;border:1px solid var(--line);border-radius:3px;
+  background:var(--bg2);cursor:pointer;transition:.1s;line-height:1}
+.em-btn.sel{border-color:var(--green-d);background:var(--green-dim)}
+
+/* ── CHARACTER CREATION ────────────── */
+#charCreate{position:fixed;inset:0;background:var(--bg);z-index:300;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:20px;overflow-y:auto}
+#charCreate.hide{display:none}
+.cc-wrap{width:100%;max-width:420px}
+.cc-pre{font-size:9px;color:var(--txt3);letter-spacing:.15em;text-transform:uppercase;margin-bottom:6px}
+.cc-title{font-size:20px;font-weight:700;color:var(--green);text-transform:uppercase;
+  letter-spacing:.12em;margin-bottom:2px}
+.cc-sub{font-size:10px;color:var(--txt3);letter-spacing:.05em;margin-bottom:20px}
+.cc-box{border:1px solid var(--line2);border-radius:3px;padding:18px;background:var(--card);margin-bottom:12px}
+.spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.spec-opt{padding:11px 8px;border:1px solid var(--line);border-radius:3px;cursor:pointer;
+  text-align:center;transition:.15s;background:var(--bg2)}
+.spec-opt.sel{border-color:var(--green-d);background:var(--green-dim)}
+.spec-em{font-size:24px;line-height:1;margin-bottom:5px}
+.spec-nm{font-size:10px;font-weight:700;color:var(--white);text-transform:uppercase;line-height:1.2}
+.spec-bonus{font-size:9px;color:var(--txt2);margin-top:3px;line-height:1.3}
+.cc-err{font-size:10px;color:var(--red);margin-top:6px;min-height:14px;text-transform:uppercase;letter-spacing:.04em}
+
+/* ── TOAST ─────────────────────────── */
+#toast{position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-80px);
+  background:var(--card2);border:1px solid var(--green-d);border-radius:3px;
+  padding:9px 16px;font-size:11px;font-weight:700;color:var(--green);z-index:500;
+  transition:transform .28s;white-space:nowrap;text-transform:uppercase;letter-spacing:.06em;
+  max-width:88vw;text-align:center}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.am{color:var(--amber);border-color:var(--amber-d)}
+#toast.cy{color:var(--cyan);border-color:var(--cyan-d)}
+</style>
+</head>
+<body>
+
+<!-- ── CHARACTER CREATION ──────────── -->
+<div id="charCreate">
+  <div class="cc-wrap">
+    <div class="cc-pre">// LABORA v1.0 — INICIALIZAÇÃO</div>
+    <div class="cc-title cursor-blink">CRIAR PERFIL</div>
+    <div class="cc-sub">// Configure seu pesquisador antes de começar</div>
+    <div class="cc-box">
+      <div class="field">
+        <label>// IDENTIFICAÇÃO DO PESQUISADOR</label>
+        <input type="text" id="ccName" placeholder="Dr. Seu Nome" maxlength="30" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="field">
+        <label>// ÁREA DE PESQUISA PRINCIPAL</label>
+        <div class="spec-grid" id="specGrid"></div>
+      </div>
+      <div class="cc-err" id="ccErr"></div>
+    </div>
+    <button id="ccConfirmBtn" class="btn g full" onclick="confirmCharacter()">▶ INICIAR PESQUISA</button>
+  </div>
+</div>
+
+<!-- ── MAIN APP ─────────────────────── -->
+<div id="app" class="hide">
+  <header id="hdr">
+    <div id="hdr-left">
+      <div id="hdr-logo">LABORA</div>
+      <div id="hdr-char"></div>
+    </div>
+    <div id="hdr-right">
+      <div id="hdr-credits">🪙 0</div>
+      <div id="hdr-clock"></div>
+    </div>
+    <div id="hdr-xpbar"><div id="hdr-xpfill" style="width:0%"></div></div>
+  </header>
+  <div id="content"></div>
+  <nav id="nav">
+    <button class="tab active" data-view="bancada">BANCADA</button>
+    <button class="tab" data-view="carreira">CARREIRA</button>
+    <button class="tab" data-view="missoes" id="tabMissoes">MISSÕES</button>
+    <button class="tab" data-view="arquivo">ARQUIVO</button>
+  </nav>
+</div>
+
+<button id="fab" onclick="openAddHabit()">+</button>
+
+<!-- ── HABIT SHEET ───────────────────── -->
+<div class="overlay" id="habitOverlay">
+  <div class="sheet" id="habitSheet"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────
+//  CONSTANTS
+// ─────────────────────────────────────────────────────────
+const LEVELS=[
+  {xp:0,    name:'INICIAÇÃO CIENTÍFICA', short:'IC',      emoji:'🔬'},
+  {xp:1500, name:'MESTRADO',             short:'MSC',     emoji:'🧫'},
+  {xp:5000, name:'DOUTORADO',            short:'PHD',     emoji:'🧪'},
+  {xp:12000,name:'PÓS-DOUTORADO',        short:'PÓS-DOC', emoji:'🔭'},
+  {xp:22000,name:'PESQUISADOR (PI)',      short:'PI',      emoji:'🧑‍🔬'},
+  {xp:38000,name:'PROFESSOR TITULAR',    short:'TITULAR', emoji:'🎓'},
+  {xp:60000,name:'MEMBRO DA ACADEMIA',   short:'ACAD',    emoji:'🏛️'},
+  {xp:90000,name:'LAUREADO',             short:'LAUR',    emoji:'🏆'},
+];
+const CONDITIONS=[
+  {emoji:'🧫',label:'CULTURA CONTAMINADA', sub:'parado 3–4 dias'},
+  {emoji:'⚗️',label:'REAGENTE VENCIDO',    sub:'parado 5–7 dias'},
+  {emoji:'⚙️',label:'EQUIPAMENTO QUEBRADO',sub:'parado 8–14 dias'},
+  {emoji:'📕',label:'ARTIGO RETRATADO',    sub:'parado 15+ dias'},
+];
+const SPECS=[
+  {id:'molbio', emoji:'🧬',name:'BIOLOGIA MOLECULAR', bonus:'+2 XP por experimento concluído'},
+  {id:'neuro',  emoji:'🧠',name:'NEUROCIÊNCIA',        bonus:'+50% XP de bônus de bem-estar'},
+  {id:'micro',  emoji:'🦠',name:'MICROBIOLOGIA',       bonus:'Grace period +1 dia extra'},
+  {id:'biochem',emoji:'🔬',name:'BIOQUÍMICA',          bonus:'+10 XP em dias 100% completos'},
+];
+const UPGRADES_DEF=[
+  {id:'microscope',emoji:'🔬',name:'MICROSCÓPIO UPGRADE',   desc:'+5 XP por experimento',       cost:200},
+  {id:'incubator', emoji:'🧫',name:'INCUBADORA NOVA',        desc:'Grace period +1 dia',         cost:350},
+  {id:'library',   emoji:'📚',name:'BASE DE DADOS PREMIUM',  desc:'+20 XP em dias 100%',         cost:300},
+  {id:'reagents',  emoji:'⚗️',name:'REAGENTES PREMIUM',      desc:'Decaimento −5 XP/dia',        cost:500},
+  {id:'network',   emoji:'🤝',name:'REDE DE COLABORAÇÃO',    desc:'Bônus bem-estar ×2',          cost:600},
+  {id:'cleanroom', emoji:'🧹',name:'SALA LIMPA',             desc:'Maré de resultados em 2 dias',cost:800},
+];
+const DAILY_QUESTS=[
+  {id:'bench_1',  name:'PROTOCOLO BÁSICO',    desc:'Complete pelo menos 1 experimento hoje.',  target:1,  type:'done',     reward:30},
+  {id:'bench_all',name:'ROTINA COMPLETA',     desc:'Complete todos os experimentos de hoje.',  target:-1, type:'done_all', reward:60},
+  {id:'bench_3',  name:'BANCADA CHEIA',       desc:'Complete 3 experimentos hoje.',            target:3,  type:'done',     reward:45},
+  {id:'wellbeing',name:'REGISTROS DO CADERNO',desc:'Registre seu humor no diário hoje.',       target:1,  type:'mood',     reward:40},
+];
+const WEEKLY_QUESTS=[
+  {id:'streak_5', name:'SEMANA DE EXPERIMENTOS',desc:'Mantenha sequência por 5 dias seguidos.',  target:5, type:'streak',   reward:150},
+  {id:'perfect_2',name:'REPLICAÇÃO',            desc:'2 dias com 100% de conclusão nesta semana.',target:2,type:'perfect',  reward:200},
+  {id:'active_5', name:'LABORATÓRIO ATIVO',     desc:'Conclua pelo menos 1 experimento em 5 dias.',target:5,type:'active', reward:120},
+];
+const STORY_QUESTS=[
+  {id:'founding_lab',   name:'MONTE SEU LABORATÓRIO',  desc:'Crie 3 protocolos de pesquisa.',               reward:100,  check:g=>state.habits.length>=3},
+  {id:'first_protocol', name:'PRIMEIRO EXPERIMENTO',   desc:'Conclua 10 experimentos no total.',             reward:150,  check:g=>g.totalDone>=10},
+  {id:'grant_app',      name:'PEDIDO DE FOMENTO',      desc:'Alcance o nível Doutorado.',                    reward:300,  check:g=>g.li>=2},
+  {id:'publication',    name:'PUBLICAÇÃO PRELIMINAR',  desc:'Conclua 50 experimentos no total.',             reward:250,  check:g=>g.totalDone>=50},
+  {id:'tenure_track',   name:'TENURE TRACK',           desc:'Alcance o nível Pesquisador (PI).',             reward:500,  check:g=>g.li>=4},
+  {id:'century',        name:'CENTENÁRIO',              desc:'Conclua 100 experimentos no total.',            reward:400,  check:g=>g.totalDone>=100},
+  {id:'academy_nom',    name:'INDICAÇÃO À ACADEMIA',   desc:'Alcance o nível Professor Titular.',            reward:1000, check:g=>g.li>=5},
+  {id:'h10',            name:'H-INDEX 10',              desc:'Acumule H-index ≥ 10 após atingir Laureado.', reward:2000, check:g=>g.hIndex>=10},
+];
+const DOW_PT=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const EMOJIS=['🔬','🧫','🧪','🔭','🧬','🦠','💊','🩺','📚','📊','📝','🏃','🧘','💪','🥗','😴','🎯','💻','🎨','📖','🏋️','🚴','🌿','⚡','🧠'];
+
+// ─────────────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────────────
+let state=JSON.parse(localStorage.getItem('labora_v1')||'null')||{
+  character:{name:'',spec:'',created:0},
+  habits:[],log:{},skipped:{},
+  daily:{},
+  credits:0,upgrades:{},
+  questsCollected:{daily:{},weekly:{},story:{}},
+  updatedAt:0
+};
+if(!state.character)state.character={name:'',spec:'',created:0};
+if(!state.daily)state.daily={};
+if(!state.credits)state.credits=0;
+if(!state.upgrades)state.upgrades={};
+if(!state.questsCollected)state.questsCollected={daily:{},weekly:{},story:{}};
+if(!state.questsCollected.daily)state.questsCollected.daily={};
+if(!state.questsCollected.weekly)state.questsCollected.weekly={};
+if(!state.questsCollected.story)state.questsCollected.story={};
+
+function save(){state.updatedAt=Date.now();localStorage.setItem('labora_v1',JSON.stringify(state));_gc=null}
+const esc=s=>String(s==null?'':s).replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const todayKey=()=>ymd(new Date());
+const getMondayKey=()=>{const d=new Date();const day=d.getDay();const diff=d.getDate()-day+(day===0?-6:1);return ymd(new Date(d.setDate(diff)))};
+
+function isScheduled(h,d){return h.days?h.days.includes(d.getDay()):true}
+function isDone(id,k){return !!(state.log[k]&&state.log[k].includes(id))}
+function isSkipped(id,k){return !!(state.skipped[k]&&state.skipped[k].includes(id))}
+function habitCreatedMs(h){const t=parseInt(String(h.id||'').replace(/^h/,''),10);return isNaN(t)?0:t}
+
+function toggle(id){
+  const k=todayKey();
+  if(!state.log[k])state.log[k]=[];
+  if(isSkipped(id,k))state.skipped[k]=state.skipped[k].filter(x=>x!==id);
+  const i=state.log[k].indexOf(id);
+  if(i>=0)state.log[k].splice(i,1);else state.log[k].push(id);
+  save();render();if(navigator.vibrate)navigator.vibrate(i>=0?8:[12,30,12]);
+}
+function toggleSkip(id,e){
+  e&&e.stopPropagation();
+  const k=todayKey();
+  if(!state.skipped[k])state.skipped[k]=[];
+  const i=state.skipped[k].indexOf(id);
+  if(i>=0)state.skipped[k].splice(i,1);
+  else{state.skipped[k].push(id);if(state.log[k])state.log[k]=state.log[k].filter(x=>x!==id);}
+  save();render();
+}
+function habitStreak(h){
+  let s=0;const d=new Date();
+  for(let i=0;i<400;i++){const k=ymd(d);
+    if(isScheduled(h,d)){if(isSkipped(h.id,k)){}
+      else if(isDone(h.id,k))s++;
+      else if(k!==todayKey())break;}
+    d.setDate(d.getDate()-1);}return s;
+}
+function globalStreak(){
+  let s=0;const d=new Date();
+  for(let i=0;i<400;i++){const k=ymd(d);
+    const sched=state.habits.filter(h=>isScheduled(h,d));
+    if(!sched.length){d.setDate(d.getDate()-1);continue}
+    const active=sched.filter(h=>!isSkipped(h.id,k));
+    if(!active.length){d.setDate(d.getDate()-1);continue}
+    if(active.every(h=>isDone(h.id,k)))s++;
+    else if(k!==todayKey())break;
+    d.setDate(d.getDate()-1);}return s;
+}
+function hasDoneToday(){
+  const k=todayKey();const d=new Date();
+  return state.habits.filter(h=>isScheduled(h,d)&&!isSkipped(h.id,k)).some(h=>isDone(h.id,k));
+}
+function dayCompletionPct(dateStr){
+  const d=new Date(dateStr+'T00:00');const end=d.getTime()+86399999;
+  const sched=state.habits.filter(h=>isScheduled(h,d)&&habitCreatedMs(h)<=end);
+  const active=sched.filter(h=>!isSkipped(h.id,dateStr));
+  if(!active.length)return null;
+  return active.filter(h=>isDone(h.id,dateStr)).length/active.length;
+}
+
+// ─────────────────────────────────────────────────────────
+//  XP ENGINE
+// ─────────────────────────────────────────────────────────
+let _gc=null;
+function computeGame(){
+  if(_gc)return _gc;
+  const u=state.upgrades||{};const spec=state.character.spec||'';
+  const xpPer=10+(u.microscope?5:0)+(spec==='molbio'?2:0);
+  const grace=2+(u.incubator?1:0)+(spec==='micro'?1:0);
+  const decayRate=15-(u.reagents?5:0);
+  const bloomThr=u.cleanroom?2:3;
+  const perfectBonus=25+(spec==='biochem'?10:0)+(u.library?20:0);
+  const wellMult=(spec==='neuro'?1.5:1)*(u.network?2:1);
+  let totalDone=0;
+  for(const k in state.log)totalDone+=(state.log[k]||[]).length;
+  const keys=[...new Set([...Object.keys(state.log||{}),...Object.keys(state.skipped||{})])].filter(Boolean).sort();
+  const today=todayKey();
+  let perfectDays=0,bloomDays=0,run=0;
+  if(keys.length){
+    const d=new Date(keys[0]+'T00:00');let guard=0;
+    while(ymd(d)<=today&&guard++<3000){
+      const k=ymd(d);const dd=d.getTime();
+      const sched=state.habits.filter(h=>isScheduled(h,d)&&habitCreatedMs(h)<=dd+86399999);
+      const active=sched.filter(h=>!isSkipped(h.id,k));
+      if(active.length>0){
+        const all=active.every(h=>isDone(h.id,k));
+        if(all){run++;perfectDays++;if(run>=bloomThr)bloomDays++;}
+        else if(k!==today)run=0;
+      }
+      d.setDate(d.getDate()+1);
+    }
+  }
+  let wellBonusDays=0;
+  for(const dt in state.daily||{}){if((state.daily[dt].mood||0)>=4)wellBonusDays++;}
+  const baseXP=totalDone*xpPer+perfectDays*perfectBonus+bloomDays*15+Math.round(wellBonusDays*15*wellMult);
+  let inactive=0;
+  if(!hasDoneToday()){
+    const d=new Date();d.setDate(d.getDate()-1);let g=0;
+    while(g++<400){const k=ymd(d);const dd=d.getTime();
+      const sched=state.habits.filter(h=>isScheduled(h,d)&&habitCreatedMs(h)<=dd+86399999);
+      const active=sched.filter(h=>!isSkipped(h.id,k));
+      if(!active.length){d.setDate(d.getDate()-1);continue}
+      if(active.some(h=>isDone(h.id,k)))break;
+      inactive++;d.setDate(d.getDate()-1);}
+  }
+  const penalty=Math.max(0,(inactive-grace))*decayRate;
+  const xp=Math.max(0,baseXP-penalty);
+  let li=0;for(let i=0;i<LEVELS.length;i++)if(xp>=LEVELS[i].xp)li=i;
+  const level=LEVELS[li],next=LEVELS[li+1]||null;
+  const prog=next?(xp-level.xp)/(next.xp-level.xp):1;
+  const hIndex=li===LEVELS.length-1?Math.floor((xp-level.xp)/500):0;
+  let condition=null;
+  if(inactive>grace){const ci=inactive<=4?0:inactive<=7?1:inactive<=14?2:3;condition=CONDITIONS[ci];}
+  const bloomActive=penalty===0&&run>=bloomThr;
+  const gs=globalStreak();
+  _gc={xp,baseXP,penalty,inactive,grace,totalDone,perfectDays,bloomDays,wellBonusDays,
+    level,next,prog,hIndex,condition,bloomActive,run,li,gs};
+  return _gc;
+}
+
+// ─────────────────────────────────────────────────────────
+//  QUEST ENGINE
+// ─────────────────────────────────────────────────────────
+function hashStr(s){return s.split('').reduce((a,c)=>a+c.charCodeAt(0),0)}
+function getDailyQuestDef(){return DAILY_QUESTS[hashStr(todayKey())%DAILY_QUESTS.length]}
+function getWeeklyQuestDef(){return WEEKLY_QUESTS[hashStr(getMondayKey())%WEEKLY_QUESTS.length]}
+function getDailyProgress(q){
+  const today=todayKey();const d=new Date();
+  const sched=state.habits.filter(h=>isScheduled(h,d));
+  const active=sched.filter(h=>!isSkipped(h.id,today));
+  const done=active.filter(h=>isDone(h.id,today)).length;
+  if(q.type==='done'){const t=q.target;return{p:Math.min(done,t),t}}
+  if(q.type==='done_all'){const t=Math.max(active.length,1);return{p:done,t}}
+  if(q.type==='mood'){return{p:(state.daily[today]?.mood||0)>=1?1:0,t:1}}
+  return{p:0,t:1};
+}
+function getWeeklyProgress(q){
+  const g=computeGame();const today=todayKey();const mon=getMondayKey();
+  if(q.type==='streak')return{p:Math.min(g.run,q.target),t:q.target};
+  if(q.type==='perfect'||q.type==='active'){
+    let count=0;const d=new Date(mon+'T00:00');
+    for(let i=0;i<7;i++){const k=ymd(d);if(k>today)break;
+      const p=dayCompletionPct(k);
+      if(q.type==='perfect'&&p===1)count++;
+      if(q.type==='active'&&p!==null&&p>0)count++;
+      d.setDate(d.getDate()+1);}
+    return{p:Math.min(count,q.target),t:q.target};
+  }
+  return{p:0,t:q.target};
+}
+function collectQuest(type,key,questId,reward){
+  if(!state.questsCollected[type])state.questsCollected[type]={};
+  state.questsCollected[type][key]=questId;
+  state.credits=(state.credits||0)+reward;
+  save();render();
+  flashSync('🪙 +'+reward+' CRÉDITOS COLETADOS','am');
+  checkPendingQuests();
+}
+function checkPendingQuests(){
+  const dq=getDailyQuestDef();const wq=getWeeklyQuestDef();
+  const dCol=state.questsCollected.daily[todayKey()]===dq.id;
+  const wCol=state.questsCollected.weekly[getMondayKey()]===wq.id;
+  const dp=getDailyProgress(dq);const wp=getWeeklyProgress(wq);
+  let pending=(dp.p>=dp.t&&!dCol)||(wp.p>=wp.t&&!wCol);
+  if(!pending){const g=computeGame();for(const sq of STORY_QUESTS){if(!state.questsCollected.story[sq.id]&&sq.check(g)){pending=true;break;}}}
+  const badge=document.getElementById('tabMissoes');
+  if(badge)badge.innerHTML='MISSÕES'+(pending?'<span class="tab-badge"></span>':'');
+}
+
+// ─────────────────────────────────────────────────────────
+//  RENDER HEADER
+// ─────────────────────────────────────────────────────────
+function updateHeader(){
+  const c=state.character;const g=computeGame();
+  document.getElementById('hdr-char').textContent=(c.name?c.name.toUpperCase()+' // ':'')+(g.level.short);
+  document.getElementById('hdr-credits').textContent='🪙 '+(state.credits||0).toLocaleString('pt-BR');
+  const now=new Date();
+  document.getElementById('hdr-clock').textContent=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('hdr-xpfill').style.width=Math.round(g.prog*100)+'%';
+}
+
+// ─────────────────────────────────────────────────────────
+//  TEXT PROGRESS BAR
+// ─────────────────────────────────────────────────────────
+function barStr(p,t,w=12){const f=t>0?Math.round(Math.min(p/t,1)*w):0;return '['+'█'.repeat(f)+'░'.repeat(w-f)+']'}
+
+// ─────────────────────────────────────────────────────────
+//  RENDER — BANCADA
+// ─────────────────────────────────────────────────────────
+function renderBancada(){
+  const today=todayKey();const d=new Date();
+  const sched=state.habits.filter(h=>isScheduled(h,d));
+  const active=sched.filter(h=>!isSkipped(h.id,today));
+  const done=active.filter(h=>isDone(h.id,today)).length;
+  const pct=active.length?Math.round(done/active.length*100):0;
+  const g=computeGame();
+  const dq=getDailyQuestDef();const dp=getDailyProgress(dq);
+  const dCol=state.questsCollected.daily[today]===dq.id;
+  const dpDone=dp.p>=dp.t;
+  const dateStr=d.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'}).toUpperCase();
+
+  // Status card
+  const statusTxt=active.length===0?'SEM EXPERIMENTOS AGENDADOS':done===active.length&&active.length>0?'BANCADA LIMPA — DIA COMPLETO! ✓':'EXPERIMENTOS EM ANDAMENTO';
+  const pctColor=pct===100?'var(--green)':pct>=50?'var(--amber)':'var(--red)';
+  let html=`
+  <div class="tc anim-in" style="border-color:${pct===100?'var(--green-d)':pct>=50?'var(--amber-d)':'var(--line)'}">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
+      <div style="font-size:9px;color:var(--txt3);letter-spacing:.08em">${esc(dateStr)}</div>
+      <div style="font-size:18px;font-weight:700;color:${pctColor}">${pct}%</div>
+    </div>
+    <div style="font-size:10px;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:.04em">${statusTxt}</div>
+    ${active.length>0?`
+    <div class="xpbar" style="margin-top:8px"><div class="xpfill" style="width:${pct}%;background:${pctColor}"></div></div>
+    <div style="font-size:9px;color:var(--txt3);margin-top:3px">${done} / ${active.length} experimentos${sched.length-active.length>0?' · '+( sched.length-active.length)+' pausado(s)':''}</div>`:''}
+  </div>`;
+
+  // Daily quest compact
+  if(!dCol){
+    html+=`
+    <div class="tc ${dpDone?'collectible':'amber'} anim-in" style="animation-delay:.05s">
+      <div class="tc-tag a">MISSÃO DIÁRIA</div>
+      <div class="tc-title">${esc(dq.name)}</div>
+      <div class="tc-sub">${esc(dq.desc)}</div>
+      <div class="pbar-row">
+        <div class="pbar-txt">${barStr(dp.p,dp.t)}</div>
+        <div class="pbar-lbl">${dp.p}/${dp.t}</div>
+        <div class="pbar-reward">+${dq.reward}🪙</div>
+      </div>
+      ${dpDone?`<button class="btn a full" onclick="collectQuest('daily','${today}','${dq.id}',${dq.reward})" style="margin-top:8px">▶ COLETAR RECOMPENSA</button>`:''}
+    </div>`;
+  }
+
+  // Habits
+  html+='<div class="sec">EXPERIMENTOS</div>';
+  if(state.habits.length===0){
+    html+=`<div class="tc" style="text-align:center;padding:20px;color:var(--txt3)">
+      <div style="font-size:24px;margin-bottom:8px">🔬</div>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em">
+        Nenhum protocolo criado.<br>Toque em + para começar.
+      </div></div>`;
+  }else{
+    const scheduled=sched.length?sched:state.habits;
+    html+=scheduled.map(h=>{
+      const done2=isDone(h.id,today);const skip=isSkipped(h.id,today);
+      const st=habitStreak(h);
+      return `<div class="habit-row ${done2?'done':''} ${skip?'skipped':''} anim-in" onclick="toggle('${h.id}')">
+        <div class="habit-chk">${done2?'✓':''}</div>
+        <div class="habit-em">${esc(h.emoji||'🔬')}</div>
+        <div class="habit-nm">${esc(h.name)}</div>
+        <div class="habit-right">
+          ${st>0?`<div class="habit-streak">🔥 ${st}d</div>`:''}
+          <div class="habit-days">${h.days?h.days.map(x=>DOW_PT[x]).join(' '):''}</div>
+          <button class="habit-skip-btn" onclick="toggleSkip('${h.id}',event)">${skip?'RETOMAR':'PAUSAR'}</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Mini level status in footer
+  if(g.condition){
+    html+=`<div class="tc danger anim-in" style="border-color:var(--amber-d)">
+      <span style="color:var(--amber)">${g.condition.emoji} ${g.condition.label}</span>
+      <span class="dim" style="font-size:10px"> — ${g.inactive} dias sem atividade · −${g.penalty} XP.<br>Execute um experimento para retomar.</span>
+    </div>`;
+  }else if(g.bloomActive){
+    html+=`<div class="tc cyan anim-in">
+      <span style="color:var(--cyan)">🚀 MARÉ DE RESULTADOS</span>
+      <span class="dim" style="font-size:10px"> — ${g.run} dias 100% seguidos! Bônus de reprodutibilidade ativo.</span>
+    </div>`;
+  }
+  document.getElementById('content').innerHTML=html;
+}
+
+// ─────────────────────────────────────────────────────────
+//  RENDER — CARREIRA
+// ─────────────────────────────────────────────────────────
+function renderCarreira(){
+  const g=computeGame();const L=g.level;const N=g.next;
+  const cond=g.condition;const bloom=g.bloomActive;
+  const mainEm=cond?cond.emoji:(bloom?'🚀':L.emoji);
+  const lvCard=`
+  <div class="lv-card ${cond?'warn':''} ${bloom?'bloom':''} anim-in">
+    <div class="lv-em">${mainEm}</div>
+    <div class="lv-info">
+      <div class="lv-name">${esc(L.name)}
+        ${cond?`<span class="st"> [${cond.label}]</span>`:''}
+        ${bloom?`<span class="st-bloom"> [MARÉ DE RESULTADOS]</span>`:''}
+      </div>
+      <div class="lv-xp">${g.xp.toLocaleString('pt-BR')} XP${N?' · faltam '+(N.xp-g.xp).toLocaleString('pt-BR')+' → '+N.short:' · NÍVEL MÁXIMO'}</div>
+      <div class="xpbar"><div class="xpfill ${bloom?'cy':''}" style="width:${Math.round(g.prog*100)}%"></div></div>
+      ${cond?`<div class="lv-status">${cond.emoji} ${cond.sub} · −${g.penalty} XP</div>`:
+        bloom?`<div class="lv-status bloom">🚀 ${g.run} dias 100% consecutivos — bônus ativo</div>`:''}
+    </div>
+  </div>`;
+
+  // H-index (only at max level)
+  const hCard=g.li===LEVELS.length-1?`
+  <div class="tc cyan anim-in" style="animation-delay:.05s">
+    <div class="tc-tag c">PÓS-LAUREADO</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div class="h-badge">H-INDEX ${g.hIndex}</div>
+      <div style="font-size:10px;color:var(--txt2)">próximo em ${500-(g.xp-g.level.xp)%500} XP</div>
+    </div>
+    <div class="pbar-txt" style="font-size:11px">${barStr((g.xp-g.level.xp)%500,500,14)}</div>
+  </div>`:
+  `<div class="tc" style="font-size:10px;color:var(--txt3);text-align:center;padding:8px;animation-delay:.05s">
+    // H-INDEX ativo após alcançar LAUREADO
+  </div>`;
+
+  // Career track
+  let track='<div class="sec" style="animation-delay:.08s">TRAJETÓRIA</div><div class="tc anim-in" style="animation-delay:.1s">';
+  LEVELS.forEach((lv,i)=>{
+    const done2=g.li>i;const curr=g.li===i;const locked=g.li<i;
+    const p=curr&&N?Math.round((g.xp-lv.xp)/(N.xp-lv.xp)*100):done2?100:0;
+    track+=`<div class="ct-item ${done2?'done':''} ${curr?'current':''} ${locked?'locked':''}">
+      <div class="ct-check">${done2?'✓':curr?'▶':''}</div>
+      <div class="ct-icon">${lv.emoji}</div>
+      <div class="ct-nm">${lv.short}</div>
+      <div class="ct-bar"><div class="ct-fill" style="width:${p}%"></div></div>
+      <div class="ct-xp">${locked?lv.xp.toLocaleString('pt-BR')+' XP':done2?'CONCLUÍDO':p+'%'}</div>
+    </div>`;
+  });
+  track+='</div>';
+
+  // Stats
+  const stats=`
+  <div class="sec" style="animation-delay:.15s">ESTATÍSTICAS</div>
+  <div class="sg anim-in" style="animation-delay:.17s">
+    <div class="sb g"><div class="sb-val">${g.totalDone}</div><div class="sb-lbl">EXPERIMENTOS</div></div>
+    <div class="sb a"><div class="sb-val">${g.gs}</div><div class="sb-lbl">SEQUÊNCIA ATUAL</div></div>
+    <div class="sb"><div class="sb-val">${g.perfectDays}</div><div class="sb-lbl">DIAS PERFEITOS</div></div>
+    <div class="sb"><div class="sb-val">${g.wellBonusDays}</div><div class="sb-lbl">BÔNUS BEM-ESTAR</div></div>
+  </div>`;
+
+  // Specialization bonus display
+  const spec=SPECS.find(s=>s.id===state.character.spec);
+  const specCard=spec?`
+  <div class="tc anim-in" style="animation-delay:.2s;border-color:var(--cyan-d)">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="font-size:22px">${spec.emoji}</div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:.04em">${spec.name}</div>
+        <div style="font-size:9px;color:var(--txt2);margin-top:2px">${spec.bonus}</div>
+      </div>
+    </div>
+  </div>`:'';
+
+  document.getElementById('content').innerHTML=lvCard+hCard+track+stats+specCard;
+}
+
+// ─────────────────────────────────────────────────────────
+//  RENDER — MISSÕES
+// ─────────────────────────────────────────────────────────
+function renderMissoes(){
+  const today=todayKey();const mon=getMondayKey();
+  const dq=getDailyQuestDef();const dp=getDailyProgress(dq);
+  const dCol=state.questsCollected.daily[today]===dq.id;
+  const dpDone=dp.p>=dp.t;
+  const wq=getWeeklyQuestDef();const wp=getWeeklyProgress(wq);
+  const wCol=state.questsCollected.weekly[mon]===wq.id;
+  const wpDone=wp.p>=wp.t;
+  const g=computeGame();
+
+  // Timer calc
+  const endDay=new Date();endDay.setHours(23,59,59,0);
+  const secLeft=Math.max(0,Math.floor((endDay-new Date())/1000));
+  const hh=String(Math.floor(secLeft/3600)).padStart(2,'0');
+  const mm=String(Math.floor((secLeft%3600)/60)).padStart(2,'0');
+  const ss=String(secLeft%60).padStart(2,'0');
+
+  let html=`<div class="sec">MISSÕES ATIVAS</div>`;
+
+  // Daily quest
+  html+=`
+  <div class="qc ${dpDone&&!dCol?'collectible':''} ${dCol?'done':''} anim-in">
+    <div class="q-tag">${dCol?'✓ CONCLUÍDA':'DIÁRIA'}</div>
+    <div class="q-nm">${esc(dq.name)}</div>
+    <div class="q-desc">${esc(dq.desc)}</div>
+    ${!dCol?`
+    <div class="pbar-row" style="margin-top:0;margin-bottom:6px">
+      <div class="pbar-txt">${barStr(dp.p,dp.t)}</div>
+      <div class="pbar-lbl">${dp.p}/${dp.t}</div>
+    </div>`:
+    `<div style="font-size:10px;color:var(--green);margin-bottom:6px">✓ Coletado hoje</div>`}
+    <div class="q-footer">
+      <div class="q-reward">+${dq.reward}🪙</div>
+      ${!dCol?`<div class="q-timer">expira ${hh}:${mm}:${ss}</div>`:''}
+    </div>
+    ${dpDone&&!dCol?`<button class="btn a full" onclick="collectQuest('daily','${today}','${dq.id}',${dq.reward})" style="margin-top:8px">▶ COLETAR RECOMPENSA</button>`:''}
+  </div>`;
+
+  // Weekly quest
+  html+=`
+  <div class="qc ${wpDone&&!wCol?'collectible':''} ${wCol?'done':''} anim-in" style="animation-delay:.05s">
+    <div class="q-tag">${wCol?'✓ CONCLUÍDA':'SEMANAL'}</div>
+    <div class="q-nm">${esc(wq.name)}</div>
+    <div class="q-desc">${esc(wq.desc)}</div>
+    ${!wCol?`
+    <div class="pbar-row" style="margin-top:0;margin-bottom:6px">
+      <div class="pbar-txt">${barStr(wp.p,wp.t)}</div>
+      <div class="pbar-lbl">${wp.p}/${wp.t}</div>
+    </div>`:
+    `<div style="font-size:10px;color:var(--green);margin-bottom:6px">✓ Coletado esta semana</div>`}
+    <div class="q-footer"><div class="q-reward">+${wq.reward}🪙</div></div>
+    ${wpDone&&!wCol?`<button class="btn a full" onclick="collectQuest('weekly','${mon}','${wq.id}',${wq.reward})" style="margin-top:8px">▶ COLETAR RECOMPENSA</button>`:''}
+  </div>`;
+
+  // Story quests
+  html+=`<div class="sec" style="margin-top:4px">QUESTS DE HISTÓRIA</div>
+  <div class="tc anim-in" style="animation-delay:.1s">`;
+  let prevDone=true;
+  STORY_QUESTS.forEach(sq=>{
+    const col=!!state.questsCollected.story[sq.id];
+    const condMet=sq.check(g);
+    const isActive=prevDone&&!col;
+    const locked=!prevDone&&!col;
+    if(col)prevDone=true;else if(isActive)prevDone=false;else prevDone=false;
+    html+=`<div class="sq-item">
+      <div class="sq-dot ${col?'done':''} ${condMet&&!col?'active':''} ${locked?'locked':''}">${col?'✓':condMet?'!':''}</div>
+      <div class="sq-body">
+        <div class="sq-nm ${col?'done':''} ${locked?'locked':''}">${esc(sq.name)}</div>
+        <div class="sq-desc">${esc(sq.desc)}</div>
+        <div class="sq-rw">+${sq.reward}🪙</div>
+      </div>
+      ${condMet&&!col?`<button class="btn a" style="align-self:center;padding:5px 10px;font-size:9px" onclick="collectQuest('story','${sq.id}','${sq.id}',${sq.reward})">COLETAR</button>`:''}
+    </div>`;
+  });
+  html+='</div>';
+
+  // Shop
+  html+=`<div class="sec" style="margin-top:4px">LABORATÓRIO — EQUIPAMENTOS</div>
+  <div class="help" style="margin-bottom:0">// Use créditos 🪙 para desbloquear upgrades permanentes. Efeitos ativos imediatamente.</div>`;
+  UPGRADES_DEF.forEach((upg,i)=>{
+    const owned=!!(state.upgrades||{})[upg.id];
+    const canBuy=!owned&&(state.credits||0)>=upg.cost;
+    html+=`<div class="shop-item ${owned?'owned':''} anim-in" style="animation-delay:${.15+i*.04}s">
+      <div class="shop-em">${upg.emoji}</div>
+      <div class="shop-body">
+        <div class="shop-nm">${esc(upg.name)}</div>
+        <div class="shop-desc">${esc(upg.desc)}</div>
+      </div>
+      <div class="shop-right">
+        ${owned?`<div class="shop-owned-tag">INSTALADO</div>`:
+          `<div class="shop-cost">${upg.cost}🪙</div>
+           <button class="btn ${canBuy?'a':'ghost'}" style="margin-top:4px;padding:4px 9px;font-size:9px;pointer-events:${canBuy?'all':'none'};opacity:${canBuy?1:.4}" onclick="buyUpgrade('${upg.id}',${upg.cost})">COMPRAR</button>`}
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('content').innerHTML=html;
+}
+
+// ─────────────────────────────────────────────────────────
+//  RENDER — ARQUIVO
+// ─────────────────────────────────────────────────────────
+function renderArquivo(){
+  const g=computeGame();const c=state.character;
+  const spec=SPECS.find(s=>s.id===c.spec)||SPECS[0];
+  const ownedUpgr=UPGRADES_DEF.filter(u=>!!(state.upgrades||{})[u.id]);
+
+  // Character profile
+  let html=`
+  <div class="cp-box anim-in">
+    <div class="cp-top">
+      <div>
+        <div class="cp-name">${esc(c.name||'PESQUISADOR')}</div>
+        <div class="cp-spec">${spec.emoji} ${spec.name}</div>
+        <div class="cp-level">${g.level.emoji} ${g.level.name}</div>
+      </div>
+      <div class="cp-em">${g.condition?g.condition.emoji:(g.bloomActive?'🚀':g.level.emoji)}</div>
+    </div>
+    <div class="cp-badges">
+      <span class="badge g">${g.xp.toLocaleString('pt-BR')} XP</span>
+      ${g.gs>0?`<span class="badge a">🔥 ${g.gs} DIAS</span>`:''}
+      ${g.hIndex>0?`<span class="badge c">H-INDEX ${g.hIndex}</span>`:''}
+      ${g.bloomActive?`<span class="badge c">🚀 MARÉ</span>`:''}
+      ${g.condition?`<span class="badge" style="color:var(--amber)">${g.condition.emoji} ${g.condition.label}</span>`:''}
+      ${ownedUpgr.length>0?`<span class="badge a">⚗️ ${ownedUpgr.length} UPGRADES</span>`:''}
+    </div>
+  </div>`;
+
+  // Credits
+  html+=`
+  <div class="tc anim-in" style="animation-delay:.05s;border-color:var(--amber-d)">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:9px;color:var(--amber);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">CRÉDITOS DE PESQUISA</div>
+        <div style="font-size:26px;font-weight:700;color:var(--amber)">🪙 ${(state.credits||0).toLocaleString('pt-BR')}</div>
+        <div style="font-size:9px;color:var(--txt3);margin-top:3px">// Use em Missões → Equipamentos</div>
+      </div>
+      <div style="text-align:right;font-size:10px;color:var(--txt3)">
+        <div>UPGRADES: ${ownedUpgr.length}/${UPGRADES_DEF.length}</div>
+        <div style="margin-top:3px">MISSÕES: ${Object.keys(state.questsCollected.story||{}).length}/${STORY_QUESTS.length}</div>
+      </div>
+    </div>
+  </div>`;
+
+  // Heatmap
+  html+=`<div class="sec" style="animation-delay:.08s">ATIVIDADE — 91 DIAS</div>
+  <div class="tc anim-in" style="animation-delay:.1s">
+    <div class="heatmap">`;
+  for(let i=90;i>=0;i--){
+    const dt=new Date();dt.setDate(dt.getDate()-i);const k=ymd(dt);
+    const p=dayCompletionPct(k);
+    const cls=p===null?'':p===0?'':p<.34?'l1':p<.67?'l2':p<1?'l3':'l4';
+    html+=`<div class="hc ${cls}" title="${k}"></div>`;
+  }
+  html+=`</div>
+    <div class="heat-legend">
+      Menos <div class="hc"></div><div class="hc l1"></div><div class="hc l2"></div><div class="hc l3"></div><div class="hc l4"></div> Mais
+    </div>
+  </div>`;
+
+  // Per-habit stats
+  if(state.habits.length>0){
+    html+=`<div class="sec" style="animation-delay:.12s">DESEMPENHO POR PROTOCOLO</div>`;
+    state.habits.forEach((h,i)=>{
+      let t=0,c2=0;
+      for(let j=0;j<30;j++){const dt=new Date();dt.setDate(dt.getDate()-j);const k=ymd(dt);
+        if(isScheduled(h,dt)&&!isSkipped(h.id,k)){t++;if(isDone(h.id,k))c2++;}}
+      const pct2=t?Math.round(c2/t*100):0;const st=habitStreak(h);
+      html+=`<div class="tc anim-in" style="animation-delay:${.15+i*.04}s;padding:8px 11px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="font-size:18px">${esc(h.emoji||'🔬')}</div>
+          <div style="flex:1">
+            <div style="font-size:11px;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:.03em">${esc(h.name)}</div>
+            <div class="pbar-row" style="margin-top:4px">
+              <div class="pbar-txt" style="font-size:10px">${barStr(pct2,100,10)}</div>
+              <div class="pbar-lbl">${pct2}% (30d)</div>
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            ${st>0?`<div style="font-size:12px;font-weight:700;color:var(--amber)">🔥 ${st}d</div>`:''}
+          </div>
+        </div>
+      </div>`;
+    });
+  }
+
+  // Wellbeing mood quick entry
+  const today=todayKey();const mood=(state.daily[today]?.mood)||0;
+  html+=`<div class="sec" style="margin-top:4px">CADERNO DO DIA</div>
+  <div class="tc anim-in">
+    <div style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">// REGISTRO DE HUMOR</div>
+    <div style="display:flex;gap:6px">
+      ${['😣','😕','😐','🙂','😄'].map((f,i)=>`<button onclick="setMood(${i+1})" style="flex:1;font-size:20px;padding:7px 0;border:1px solid ${mood===i+1?'var(--green-d)':'var(--line)'};background:${mood===i+1?'var(--green-dim)':'var(--bg2)'};border-radius:3px;cursor:pointer;filter:${mood===i+1?'none':'grayscale(.5)'};opacity:${mood===i+1?1:.65};transition:.1s">${f}</button>`).join('')}
+    </div>
+  </div>`;
+
+  document.getElementById('content').innerHTML=html;
+}
+function setMood(v){
+  if(!state.daily)state.daily={};
+  const k=todayKey();
+  if(!state.daily[k])state.daily[k]={};
+  state.daily[k].mood=v;
+  state.daily[k]._ts=Date.now();
+  save();render();flashSync('HUMOR REGISTRADO');
+}
+
+// ─────────────────────────────────────────────────────────
+//  RENDER — MAIN
+// ─────────────────────────────────────────────────────────
+let currentView='bancada';
+function render(){
+  updateHeader();
+  checkPendingQuests();
+  if(currentView==='bancada')renderBancada();
+  else if(currentView==='carreira')renderCarreira();
+  else if(currentView==='missoes')renderMissoes();
+  else if(currentView==='arquivo')renderArquivo();
+}
+
+// ─────────────────────────────────────────────────────────
+//  CHARACTER CREATION
+// ─────────────────────────────────────────────────────────
+let selectedSpec='';
+function renderCharCreate(){
+  const grid=document.getElementById('specGrid');
+  if(!grid)return;
+  grid.innerHTML=SPECS.map(s=>`<div class="spec-opt ${selectedSpec===s.id?'sel':''}" onclick="selectSpec('${s.id}')">
+    <div class="spec-em">${s.emoji}</div>
+    <div class="spec-nm">${s.name}</div>
+    <div class="spec-bonus">${s.bonus}</div>
+  </div>`).join('');
+}
+function selectSpec(id){selectedSpec=id;renderCharCreate()}
+function confirmCharacter(){
+  const nameEl=document.getElementById('ccName');
+  const errEl=document.getElementById('ccErr');
+  const name=(nameEl.value||'').trim();
+  if(!name){errEl.textContent='// ERRO: Informe seu nome de pesquisador.';return}
+  if(!selectedSpec){errEl.textContent='// ERRO: Selecione uma área de pesquisa.';return}
+  state.character={name,spec:selectedSpec,created:Date.now()};
+  save();
+  document.getElementById('charCreate').classList.add('hide');
+  document.getElementById('app').classList.remove('hide');
+  document.getElementById('fab').classList.remove('hide');
+  render();
+  flashSync('BEM-VINDO(A), '+name.toUpperCase()+'!','g');
+}
+
+// ─────────────────────────────────────────────────────────
+//  HABIT ADD FORM
+// ─────────────────────────────────────────────────────────
+let habitFormDays=[0,1,2,3,4,5,6];
+let habitFormEmoji='🔬';
+function openAddHabit(){
+  habitFormDays=[0,1,2,3,4,5,6];habitFormEmoji='🔬';
+  const sheet=document.getElementById('habitSheet');
+  sheet.innerHTML=`
+    <h3>// NOVO PROTOCOLO</h3>
+    <div class="field">
+      <label>NOME DO EXPERIMENTO</label>
+      <input type="text" id="hfName" placeholder="Nome do protocolo" maxlength="40" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>ÍCONE</label>
+      <div class="emoji-row" id="hfEmojiRow"></div>
+    </div>
+    <div class="field">
+      <label>FREQUÊNCIA</label>
+      <div class="days-row" id="hfDays"></div>
+    </div>
+    <div class="sep"></div>
+    <button id="habitSaveBtn" class="btn g full" onclick="saveHabit()">▶ REGISTRAR PROTOCOLO</button>
+    <button class="btn ghost full" onclick="closeHabitSheet()" style="margin-top:6px">CANCELAR</button>`;
+  renderHabitFormEmojis();renderHabitFormDays();
+  document.getElementById('habitOverlay').classList.add('show');
+  setTimeout(()=>document.getElementById('hfName')?.focus(),300);
+}
+function renderHabitFormEmojis(){
+  const el=document.getElementById('hfEmojiRow');if(!el)return;
+  el.innerHTML=EMOJIS.map(e=>`<button class="em-btn ${habitFormEmoji===e?'sel':''}" onclick="selectEmoji('${e}')">${e}</button>`).join('');
+}
+function renderHabitFormDays(){
+  const el=document.getElementById('hfDays');if(!el)return;
+  el.innerHTML=DOW_PT.map((d,i)=>`<button class="day-btn ${habitFormDays.includes(i)?'on':''}" onclick="toggleDay(${i})">${d}</button>`).join('');
+}
+function selectEmoji(e){habitFormEmoji=e;renderHabitFormEmojis()}
+function toggleDay(i){
+  const idx=habitFormDays.indexOf(i);
+  if(idx>=0)habitFormDays.splice(idx,1);else habitFormDays.push(i);
+  habitFormDays.sort();renderHabitFormDays();
+}
+function saveHabit(){
+  const name=(document.getElementById('hfName')?.value||'').trim();
+  if(!name){flashSync('// ERRO: Informe o nome.');return}
+  if(!habitFormDays.length){flashSync('// ERRO: Selecione pelo menos um dia.');return}
+  state.habits.push({id:'h'+Date.now(),name,emoji:habitFormEmoji,days:habitFormDays.slice(),updatedAt:Date.now()});
+  save();closeHabitSheet();render();
+  flashSync('PROTOCOLO REGISTRADO: '+name.toUpperCase());
+}
+function closeHabitSheet(){document.getElementById('habitOverlay').classList.remove('show')}
+
+// ─────────────────────────────────────────────────────────
+//  SHOP
+// ─────────────────────────────────────────────────────────
+function buyUpgrade(id,cost){
+  if((state.credits||0)<cost){flashSync('// ERRO: CRÉDITOS INSUFICIENTES','am');return}
+  if(state.upgrades[id]){return}
+  state.credits-=cost;state.upgrades[id]=true;
+  save();render();
+  const upg=UPGRADES_DEF.find(u=>u.id===id);
+  flashSync('🧪 '+upg.name+' INSTALADO','cy');
+}
+
+// ─────────────────────────────────────────────────────────
+//  TOAST
+// ─────────────────────────────────────────────────────────
+function flashSync(msg,cls='g'){
+  const t=document.getElementById('toast');if(!t)return;
+  t.textContent=msg;t.className='show '+(cls||'g');
+  clearTimeout(t._tm);t._tm=setTimeout(()=>{t.className=''},2800);
+}
+
+// ─────────────────────────────────────────────────────────
+//  NAVIGATION
+// ─────────────────────────────────────────────────────────
+document.getElementById('nav').addEventListener('click',e=>{
+  const tab=e.target.closest('.tab');if(!tab||!tab.dataset.view)return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');currentView=tab.dataset.view;render();
+});
+document.getElementById('habitOverlay').onclick=e=>{if(e.target===document.getElementById('habitOverlay'))closeHabitSheet()};
+
+// ─────────────────────────────────────────────────────────
+//  CLOCK TICK
+// ─────────────────────────────────────────────────────────
+setInterval(()=>{
+  const hc=document.getElementById('hdr-clock');if(hc){const n=new Date();hc.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')}
+  // refresh quest timer in missoes view
+  if(currentView==='missoes')renderMissoes();
+},1000);
+
+// ─────────────────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────────────────
+if(state.character&&state.character.name){
+  document.getElementById('charCreate').classList.add('hide');
+  document.getElementById('app').classList.remove('hide');
+  render();
+}else{
+  document.getElementById('app').classList.add('hide');
+  document.getElementById('fab').classList.add('hide');
+  renderCharCreate();
+}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
