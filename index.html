@@ -228,6 +228,45 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;
 .hc.l2{background:rgba(57,255,20,.35)}
 .hc.l3{background:rgba(57,255,20,.65)}
 .hc.l4{background:rgba(57,255,20,.9)}
+.hc.slip{background:rgba(255,60,60,.75)}
+.hc.skipc{background:rgba(255,170,0,.35)}
+.hc.na{background:transparent;border:1px dashed var(--line)}
+/* ── prioridade (estrelas) ── */
+.prio{color:var(--amber);font-size:10px;letter-spacing:1px;margin-left:4px}
+.avtag{display:inline-block;font-size:8px;color:var(--red);border:1px solid var(--red-d);padding:0 3px;letter-spacing:.08em;vertical-align:middle}
+.habit-xpv{font-size:11px;font-weight:700}
+.habit-xpv.pos{color:var(--green)}
+.habit-xpv.neg{color:var(--red)}
+/* ── contenções (evitar) ── */
+.habit-row.avoid{border-style:dashed;border-color:var(--line2)}
+.habit-row.avoid.slip-bad{border-color:var(--red-d);border-style:solid;background:rgba(255,60,60,.06)}
+.avoid-chk{border-color:var(--red-d)!important;color:var(--red)}
+.habit-row.avoid.slip-bad .avoid-chk{background:rgba(255,60,60,.12)}
+.avoid-lbl{font-size:8px;font-weight:700;letter-spacing:.1em;color:var(--green-d)}
+.avoid-lbl.bad{color:var(--red)}
+/* ── seletor de tipo/prioridade no form ── */
+.pol-row{display:flex;gap:6px}
+.pol-btn{flex:1;padding:9px;border:1px solid var(--line);border-radius:3px;background:var(--bg2);
+  color:var(--txt2);font-size:10px;font-weight:700;letter-spacing:.05em;cursor:pointer;font-family:var(--mono)}
+.pol-btn.on{border-color:var(--green-d);background:var(--green-dim);color:var(--green)}
+.pol-btn.avoid.on{border-color:var(--red-d);background:rgba(255,60,60,.08);color:var(--red)}
+.fhint{font-size:9px;color:var(--txt3);margin-top:5px;line-height:1.5}
+.prio-row{display:flex;gap:6px}
+.prio-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;
+  border:1px solid var(--line);border-radius:3px;background:var(--bg2);cursor:pointer;font-family:var(--mono)}
+.prio-btn.on{border-color:var(--green-d);background:var(--green-dim)}
+.prio-btn .ps{font-size:12px;color:var(--txt3);letter-spacing:1px}
+.prio-btn.on .ps{color:var(--amber)}
+.prio-btn .pv{font-size:9px;color:var(--txt3)}
+.prio-btn.on .pv{color:var(--green)}
+/* ── detalhe do hábito ── */
+.dtl-sub{font-size:9px;color:var(--txt3);letter-spacing:.06em;margin:-4px 0 12px}
+.dtl-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.dtl-cell{border:1px solid var(--line);border-radius:3px;background:var(--bg2);padding:9px 11px}
+.dtl-cell b{font-size:20px;font-weight:700;color:var(--green);display:block;line-height:1}
+.dtl-cell.bad b{color:var(--red)}
+.dtl-cell span{font-size:8px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-top:5px}
+.dtl-heat{grid-template-columns:repeat(10,1fr)!important}
 .heat-legend{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--txt3);margin-top:4px}
 .heat-legend .hc{width:10px;height:10px;flex-shrink:0}
 
@@ -428,7 +467,7 @@ const STORY_QUESTS=[
   {id:'h10',            name:'H-INDEX 10',              desc:'Acumule H-index ≥ 10 após atingir Laureado.', reward:2000, check:g=>g.hIndex>=10},
 ];
 const DOW_PT=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-const EMOJIS=['🔬','🧫','🧪','🔭','🧬','🦠','💊','🩺','📚','📊','📝','🏃','🧘','💪','🥗','😴','🎯','💻','🎨','📖','🏋️','🚴','🌿','⚡','🧠'];
+const EMOJIS=['🔬','🧫','🧪','🔭','🧬','🦠','💊','🩺','📚','📊','📝','🏃','🧘','💪','🥗','😴','🎯','💻','🎨','📖','🏋️','🚴','🌿','⚡','🧠','🍰','📱','📺','🍺','☕','🎮','🚬','🛌'];
 
 // ─────────────────────────────────────────────────────────
 //  STATE
@@ -443,6 +482,7 @@ let state=JSON.parse(localStorage.getItem('labora_v1')||'null')||{
 };
 if(!state.character)state.character={name:'',spec:'',created:0};
 if(!state.daily)state.daily={};
+if(!state.slips)state.slips={};
 if(!state.credits)state.credits=0;
 if(!state.upgrades)state.upgrades={};
 if(!state.questsCollected)state.questsCollected={daily:{},weekly:{},story:{}};
@@ -459,6 +499,10 @@ const getMondayKey=()=>{const d=new Date();const day=d.getDay();const diff=d.get
 function isScheduled(h,d){return h.days?h.days.includes(d.getDay()):true}
 function isDone(id,k){return !!(state.log[k]&&state.log[k].includes(id))}
 function isSkipped(id,k){return !!(state.skipped[k]&&state.skipped[k].includes(id))}
+function isSlipped(id,k){return !!(state.slips[k]&&state.slips[k].includes(id))}
+function habitById(id){return state.habits.find(h=>h.id===id)}
+function isAvoid(h){return h&&h.polarity==='avoid'}
+function habitPts(h){return (h.priority||1)*10}
 function habitCreatedMs(h){const t=parseInt(String(h.id||'').replace(/^h/,''),10);return isNaN(t)?0:t}
 
 function toggle(id){
@@ -478,6 +522,16 @@ function toggleSkip(id,e){
   else{state.skipped[k].push(id);if(state.log[k])state.log[k]=state.log[k].filter(x=>x!==id);}
   save();render();
 }
+// Hábito de contenção (evitar): marcar = registrar desvio (penalidade)
+function toggleAvoid(id){
+  const k=todayKey();
+  if(!state.slips[k])state.slips[k]=[];
+  const i=state.slips[k].indexOf(id);
+  const h=habitById(id);
+  if(i>=0){state.slips[k].splice(i,1);flashSync('CONTENÇÃO RESTAURADA','g');}
+  else{state.slips[k].push(id);flashSync('⚠ DESVIO REGISTRADO: −'+habitPts(h)+' XP','am');}
+  save();render();if(navigator.vibrate)navigator.vibrate(10);
+}
 function habitStreak(h){
   let s=0;const d=new Date();
   for(let i=0;i<400;i++){const k=ymd(d);
@@ -489,7 +543,7 @@ function habitStreak(h){
 function globalStreak(){
   let s=0;const d=new Date();
   for(let i=0;i<400;i++){const k=ymd(d);
-    const sched=state.habits.filter(h=>isScheduled(h,d));
+    const sched=state.habits.filter(h=>isScheduled(h,d)&&!isAvoid(h));
     if(!sched.length){d.setDate(d.getDate()-1);continue}
     const active=sched.filter(h=>!isSkipped(h.id,k));
     if(!active.length){d.setDate(d.getDate()-1);continue}
@@ -503,7 +557,7 @@ function hasDoneToday(){
 }
 function dayCompletionPct(dateStr){
   const d=new Date(dateStr+'T00:00');const end=d.getTime()+86399999;
-  const sched=state.habits.filter(h=>isScheduled(h,d)&&habitCreatedMs(h)<=end);
+  const sched=state.habits.filter(h=>isScheduled(h,d)&&habitCreatedMs(h)<=end&&!isAvoid(h));
   const active=sched.filter(h=>!isSkipped(h.id,dateStr));
   if(!active.length)return null;
   return active.filter(h=>isDone(h.id,dateStr)).length/active.length;
@@ -524,18 +578,25 @@ function computeGame(){
   const wellMult=(spec==='neuro'?1.5:1)*(u.network?2:1);
   let totalDone=0;
   for(const k in state.log)totalDone+=(state.log[k]||[]).length;
-  const keys=[...new Set([...Object.keys(state.log||{}),...Object.keys(state.skipped||{})])].filter(Boolean).sort();
+  const keys=[...new Set([...Object.keys(state.log||{}),...Object.keys(state.skipped||{}),...Object.keys(state.slips||{})])].filter(Boolean).sort();
   const today=todayKey();
-  let perfectDays=0,bloomDays=0,run=0;
+  let perfectDays=0,bloomDays=0,run=0,donePts=0,avoidPts=0;
   if(keys.length){
     const d=new Date(keys[0]+'T00:00');let guard=0;
     while(ymd(d)<=today&&guard++<3000){
       const k=ymd(d);const dd=d.getTime();
       const sched=state.habits.filter(h=>isScheduled(h,d)&&habitCreatedMs(h)<=dd+86399999);
-      const active=sched.filter(h=>!isSkipped(h.id,k));
+      const avoid=sched.filter(isAvoid);
+      const active=sched.filter(h=>!isAvoid(h)&&!isSkipped(h.id,k));
+      // pontos ponderados por prioridade (★) dos positivos concluídos
+      (state.log[k]||[]).forEach(id=>{const h=habitById(id);if(h&&!isAvoid(h))donePts+=(h.priority||1)*xpPer;});
+      // contenção: resistir dá +5×prio, registrar desvio tira −10×prio
+      avoid.forEach(h=>{if(isSlipped(h.id,k))avoidPts-=(h.priority||1)*10;else avoidPts+=(h.priority||1)*5;});
+      // dia perfeito: todos positivos ativos feitos E nenhum desvio de contenção
       if(active.length>0){
         const all=active.every(h=>isDone(h.id,k));
-        if(all){run++;perfectDays++;if(run>=bloomThr)bloomDays++;}
+        const clean=avoid.every(h=>!isSlipped(h.id,k));
+        if(all&&clean){run++;perfectDays++;if(run>=bloomThr)bloomDays++;}
         else if(k!==today)run=0;
       }
       d.setDate(d.getDate()+1);
@@ -543,12 +604,12 @@ function computeGame(){
   }
   let wellBonusDays=0;
   for(const dt in state.daily||{}){if((state.daily[dt].mood||0)>=4)wellBonusDays++;}
-  const baseXP=totalDone*xpPer+perfectDays*perfectBonus+bloomDays*15+Math.round(wellBonusDays*15*wellMult);
+  const baseXP=donePts+avoidPts+perfectDays*perfectBonus+bloomDays*15+Math.round(wellBonusDays*15*wellMult);
   let inactive=0;
   if(!hasDoneToday()){
     const d=new Date();d.setDate(d.getDate()-1);let g=0;
     while(g++<400){const k=ymd(d);const dd=d.getTime();
-      const sched=state.habits.filter(h=>isScheduled(h,d)&&habitCreatedMs(h)<=dd+86399999);
+      const sched=state.habits.filter(h=>isScheduled(h,d)&&habitCreatedMs(h)<=dd+86399999&&!isAvoid(h));
       const active=sched.filter(h=>!isSkipped(h.id,k));
       if(!active.length){d.setDate(d.getDate()-1);continue}
       if(active.some(h=>isDone(h.id,k)))break;
@@ -640,7 +701,9 @@ function barStr(p,t,w=12){const f=t>0?Math.round(Math.min(p/t,1)*w):0;return '['
 // ─────────────────────────────────────────────────────────
 function renderBancada(){
   const today=todayKey();const d=new Date();
-  const sched=state.habits.filter(h=>isScheduled(h,d));
+  const schedAll=state.habits.filter(h=>isScheduled(h,d));
+  const sched=schedAll.filter(h=>!isAvoid(h));
+  const schedAvoid=schedAll.filter(isAvoid);
   const active=sched.filter(h=>!isSkipped(h.id,today));
   const done=active.filter(h=>isDone(h.id,today)).length;
   const pct=active.length?Math.round(done/active.length*100):0;
@@ -681,7 +744,7 @@ function renderBancada(){
     </div>`;
   }
 
-  // Habits
+  // Habits — experimentos (positivos)
   html+='<div class="sec">EXPERIMENTOS</div>';
   if(state.habits.length===0){
     html+=`<div class="tc" style="text-align:center;padding:20px;color:var(--txt3)">
@@ -690,18 +753,34 @@ function renderBancada(){
         Nenhum protocolo criado.<br>Toque em + para começar.
       </div></div>`;
   }else{
-    const scheduled=sched.length?sched:state.habits;
-    html+=scheduled.map(h=>{
+    const scheduled=sched.length?sched:state.habits.filter(h=>!isAvoid(h));
+    html+=scheduled.length?scheduled.map(h=>{
       const done2=isDone(h.id,today);const skip=isSkipped(h.id,today);
-      const st=habitStreak(h);
+      const st=habitStreak(h);const stars='★'.repeat(h.priority||1);
       return `<div class="habit-row ${done2?'done':''} ${skip?'skipped':''} anim-in" onclick="toggle('${h.id}')">
         <div class="habit-chk">${done2?'✓':''}</div>
         <div class="habit-em">${esc(h.emoji||'🔬')}</div>
-        <div class="habit-nm">${esc(h.name)}</div>
+        <div class="habit-nm">${esc(h.name)}<span class="prio">${stars}</span></div>
         <div class="habit-right">
           ${st>0?`<div class="habit-streak">🔥 ${st}d</div>`:''}
-          <div class="habit-days">${h.days?h.days.map(x=>DOW_PT[x]).join(' '):''}</div>
+          <div class="habit-xpv pos">+${(h.priority||1)*10}</div>
           <button class="habit-skip-btn" onclick="toggleSkip('${h.id}',event)">${skip?'RETOMAR':'PAUSAR'}</button>
+        </div>
+      </div>`;
+    }).join(''):`<div class="tc dim" style="text-align:center;padding:14px;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Nenhum experimento agendado hoje.</div>`;
+  }
+  // Contenções (hábitos a evitar)
+  if(schedAvoid.length){
+    html+='<div class="sec">CONTENÇÕES // EVITAR</div>';
+    html+=schedAvoid.map(h=>{
+      const slip=isSlipped(h.id,today);const stars='★'.repeat(h.priority||1);
+      return `<div class="habit-row avoid ${slip?'slip-bad':''} anim-in" onclick="toggleAvoid('${h.id}')">
+        <div class="habit-chk avoid-chk">${slip?'✕':'○'}</div>
+        <div class="habit-em">${esc(h.emoji||'🚫')}</div>
+        <div class="habit-nm">${esc(h.name)}<span class="prio">${stars}</span></div>
+        <div class="habit-right">
+          <div class="habit-xpv ${slip?'neg':'pos'}">${slip?'−'+(h.priority||1)*10:'+'+(h.priority||1)*5}</div>
+          <div class="avoid-lbl ${slip?'bad':''}">${slip?'DESVIO':'CONTIDO'}</div>
         </div>
       </div>`;
     }).join('');
@@ -962,26 +1041,30 @@ function renderArquivo(){
     </div>
   </div>`;
 
-  // Per-habit stats
+  // Per-habit stats (clicável → detalhe de 30 dias)
   if(state.habits.length>0){
-    html+=`<div class="sec" style="animation-delay:.12s">DESEMPENHO POR PROTOCOLO</div>`;
+    html+=`<div class="sec" style="animation-delay:.12s">DESEMPENHO POR PROTOCOLO <span style="color:var(--txt3);text-transform:none;letter-spacing:0"> // toque p/ 30 dias</span></div>`;
     state.habits.forEach((h,i)=>{
+      const av=isAvoid(h);
       let t=0,c2=0;
       for(let j=0;j<30;j++){const dt=new Date();dt.setDate(dt.getDate()-j);const k=ymd(dt);
-        if(isScheduled(h,dt)&&!isSkipped(h.id,k)){t++;if(isDone(h.id,k))c2++;}}
-      const pct2=t?Math.round(c2/t*100):0;const st=habitStreak(h);
-      html+=`<div class="tc anim-in" style="animation-delay:${.15+i*.04}s;padding:8px 11px">
+        if(isScheduled(h,dt)&&habitCreatedMs(h)<=dt.getTime()+86399999){
+          if(av){t++;if(!isSlipped(h.id,k))c2++;}
+          else if(!isSkipped(h.id,k)){t++;if(isDone(h.id,k))c2++;}}}
+      const pct2=t?Math.round(c2/t*100):0;const st=habitStreak(h);const stars='★'.repeat(h.priority||1);
+      html+=`<div class="tc anim-in" style="animation-delay:${.15+i*.04}s;padding:8px 11px;cursor:pointer" onclick="showHabitDetail('${h.id}')">
         <div style="display:flex;align-items:center;gap:8px">
           <div style="font-size:18px">${esc(h.emoji||'🔬')}</div>
-          <div style="flex:1">
-            <div style="font-size:11px;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:.03em">${esc(h.name)}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:11px;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:.03em">${esc(h.name)} <span class="prio">${stars}</span>${av?' <span class="avtag">EVITAR</span>':''}</div>
             <div class="pbar-row" style="margin-top:4px">
               <div class="pbar-txt" style="font-size:10px">${barStr(pct2,100,10)}</div>
-              <div class="pbar-lbl">${pct2}% (30d)</div>
+              <div class="pbar-lbl">${pct2}% ${av?'contido':''}(30d)</div>
             </div>
           </div>
           <div style="text-align:right;flex-shrink:0">
             ${st>0?`<div style="font-size:12px;font-weight:700;color:var(--amber)">🔥 ${st}d</div>`:''}
+            <div style="font-size:14px;color:var(--txt3)">›</div>
           </div>
         </div>
       </div>`;
@@ -1056,14 +1139,26 @@ function confirmCharacter(){
 // ─────────────────────────────────────────────────────────
 let habitFormDays=[0,1,2,3,4,5,6];
 let habitFormEmoji='🔬';
+let habitFormPriority=1;
+let habitFormPolarity='good';
+let habitFormEditId=null;
 function openAddHabit(){
-  habitFormDays=[0,1,2,3,4,5,6];habitFormEmoji='🔬';
+  habitFormDays=[0,1,2,3,4,5,6];habitFormEmoji='🔬';habitFormPriority=1;habitFormPolarity='good';habitFormEditId=null;
   const sheet=document.getElementById('habitSheet');
   sheet.innerHTML=`
     <h3>// NOVO PROTOCOLO</h3>
     <div class="field">
       <label>NOME DO EXPERIMENTO</label>
       <input type="text" id="hfName" placeholder="Nome do protocolo" maxlength="40" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>TIPO</label>
+      <div class="pol-row" id="hfPol"></div>
+      <div class="fhint" id="hfPolHint"></div>
+    </div>
+    <div class="field">
+      <label>PRIORIDADE // PESO NA PONTUAÇÃO</label>
+      <div class="prio-row" id="hfPrio"></div>
     </div>
     <div class="field">
       <label>ÍCONE</label>
@@ -1076,7 +1171,7 @@ function openAddHabit(){
     <div class="sep"></div>
     <button id="habitSaveBtn" class="btn g full" onclick="saveHabit()">▶ REGISTRAR PROTOCOLO</button>
     <button class="btn ghost full" onclick="closeHabitSheet()" style="margin-top:6px">CANCELAR</button>`;
-  renderHabitFormEmojis();renderHabitFormDays();
+  renderHabitFormEmojis();renderHabitFormDays();renderHabitFormPol();renderHabitFormPrio();
   document.getElementById('habitOverlay').classList.add('show');
   setTimeout(()=>document.getElementById('hfName')?.focus(),300);
 }
@@ -1088,19 +1183,113 @@ function renderHabitFormDays(){
   const el=document.getElementById('hfDays');if(!el)return;
   el.innerHTML=DOW_PT.map((d,i)=>`<button class="day-btn ${habitFormDays.includes(i)?'on':''}" onclick="toggleDay(${i})">${d}</button>`).join('');
 }
+function renderHabitFormPol(){
+  const el=document.getElementById('hfPol');if(!el)return;
+  el.innerHTML=`
+    <button class="pol-btn ${habitFormPolarity==='good'?'on':''}" onclick="setHabitPolarity('good')">✓ CONSTRUIR</button>
+    <button class="pol-btn avoid ${habitFormPolarity==='avoid'?'on':''}" onclick="setHabitPolarity('avoid')">✕ EVITAR</button>`;
+  const hint=document.getElementById('hfPolHint');
+  if(hint)hint.textContent=habitFormPolarity==='avoid'
+    ?'// Hábito a evitar. Registrar desvio tira XP; resistir o dia todo dá bônus.'
+    :'// Hábito a construir. Concluir dá XP proporcional à prioridade.';
+}
+function renderHabitFormPrio(){
+  const el=document.getElementById('hfPrio');if(!el)return;
+  const lbl=habitFormPolarity==='avoid'?['−10','−20','−30']:['+10','+20','+30'];
+  el.innerHTML=[1,2,3].map(p=>`<button class="prio-btn ${habitFormPriority===p?'on':''}" onclick="setHabitPriority(${p})">
+    <span class="ps">${'★'.repeat(p)}</span><span class="pv">${lbl[p-1]} XP</span></button>`).join('');
+}
+function setHabitPolarity(p){habitFormPolarity=p;renderHabitFormPol();renderHabitFormPrio()}
+function setHabitPriority(n){habitFormPriority=n;renderHabitFormPrio()}
 function selectEmoji(e){habitFormEmoji=e;renderHabitFormEmojis()}
 function toggleDay(i){
   const idx=habitFormDays.indexOf(i);
   if(idx>=0)habitFormDays.splice(idx,1);else habitFormDays.push(i);
   habitFormDays.sort();renderHabitFormDays();
 }
+function openEditHabit(id){
+  const h=habitById(id);if(!h)return;
+  closeHabitSheet();
+  setTimeout(()=>{
+    openAddHabit();
+    habitFormEditId=id;habitFormEmoji=h.emoji||'🔬';habitFormDays=(h.days||[0,1,2,3,4,5,6]).slice();
+    habitFormPriority=h.priority||1;habitFormPolarity=h.polarity||'good';
+    const sheet=document.getElementById('habitSheet');
+    sheet.querySelector('h3').textContent='// EDITAR PROTOCOLO';
+    sheet.querySelector('#habitSaveBtn').textContent='▶ SALVAR ALTERAÇÕES';
+    document.getElementById('hfName').value=h.name;
+    renderHabitFormEmojis();renderHabitFormDays();renderHabitFormPol();renderHabitFormPrio();
+  },220);
+}
 function saveHabit(){
   const name=(document.getElementById('hfName')?.value||'').trim();
   if(!name){flashSync('// ERRO: Informe o nome.');return}
   if(!habitFormDays.length){flashSync('// ERRO: Selecione pelo menos um dia.');return}
-  state.habits.push({id:'h'+Date.now(),name,emoji:habitFormEmoji,days:habitFormDays.slice(),updatedAt:Date.now()});
+  if(habitFormEditId){
+    const h=habitById(habitFormEditId);
+    if(h)Object.assign(h,{name,emoji:habitFormEmoji,days:habitFormDays.slice(),priority:habitFormPriority,polarity:habitFormPolarity,updatedAt:Date.now()});
+    flashSync('PROTOCOLO ATUALIZADO: '+name.toUpperCase());
+  }else{
+    state.habits.push({id:'h'+Date.now(),name,emoji:habitFormEmoji,days:habitFormDays.slice(),priority:habitFormPriority,polarity:habitFormPolarity,updatedAt:Date.now()});
+    flashSync('PROTOCOLO REGISTRADO: '+name.toUpperCase());
+  }
   save();closeHabitSheet();render();
-  flashSync('PROTOCOLO REGISTRADO: '+name.toUpperCase());
+}
+function deleteHabit(id){
+  if(!confirm('Excluir este protocolo? O histórico é mantido para estatísticas.'))return;
+  const h=habitById(id);if(h){h.deleted=true;h.updatedAt=Date.now();}
+  state.habits=state.habits.filter(x=>x.id!==id);
+  save();closeHabitSheet();render();flashSync('PROTOCOLO REMOVIDO');
+}
+// Detalhe de 30 dias por hábito (abre no modal)
+function showHabitDetail(id){
+  const h=habitById(id);if(!h)return;
+  const av=isAvoid(h);
+  let t=0,good=0,bad=0;
+  for(let j=0;j<30;j++){const dt=new Date();dt.setDate(dt.getDate()-j);const k=ymd(dt);
+    if(isScheduled(h,dt)&&habitCreatedMs(h)<=dt.getTime()+86399999){
+      if(av){t++;if(isSlipped(h.id,k))bad++;else good++;}
+      else if(!isSkipped(h.id,k)){t++;if(isDone(h.id,k))good++;else bad++;}}}
+  const pct=t?Math.round(good/t*100):0;
+  let st=0;const d=new Date();
+  for(let i=0;i<400;i++){const k=ymd(d);
+    if(isScheduled(h,d)&&habitCreatedMs(h)<=d.getTime()+86399999){
+      if(av){if(!isSlipped(h.id,k))st++;else if(k!==todayKey())break;}
+      else{if(isSkipped(h.id,k)){}else if(isDone(h.id,k))st++;else if(k!==todayKey())break;}
+    }
+    d.setDate(d.getDate()-1);
+  }
+  let cells='';
+  for(let j=29;j>=0;j--){const dt=new Date();dt.setDate(dt.getDate()-j);const k=ymd(dt);
+    let cls='hc';
+    if(!isScheduled(h,dt)||habitCreatedMs(h)>dt.getTime()+86399999)cls+=' na';
+    else if(av)cls+=isSlipped(h.id,k)?' slip':' l4';
+    else if(isSkipped(h.id,k))cls+=' skipc';
+    else cls+=isDone(h.id,k)?' l4':'';
+    cells+=`<div class="${cls}" title="${k}"></div>`;
+  }
+  const stars='★'.repeat(h.priority||1);
+  const days=(h.days&&h.days.length<7)?h.days.map(x=>DOW_PT[x]).join(' '):'todo dia';
+  const sheet=document.getElementById('habitSheet');
+  sheet.innerHTML=`
+    <h3>${esc(h.emoji||'🔬')} ${esc(h.name)}</h3>
+    <div class="dtl-sub">${av?'CONTENÇÃO // EVITAR':'EXPERIMENTO'} · <span class="prio">${stars}</span> · ${days}</div>
+    <div class="dtl-grid">
+      <div class="dtl-cell"><b>${pct}%</b><span>${av?'contenção 30d':'adesão 30d'}</span></div>
+      <div class="dtl-cell"><b>${st}</b><span>sequência atual</span></div>
+      <div class="dtl-cell"><b>${good}</b><span>${av?'dias contido':'concluído 30d'}</span></div>
+      <div class="dtl-cell ${bad?'bad':''}"><b>${bad}</b><span>${av?'desvios 30d':'perdidos 30d'}</span></div>
+    </div>
+    <div class="sec" style="margin-top:12px">MAPA — 30 DIAS</div>
+    <div class="heatmap dtl-heat">${cells}</div>
+    <div class="heat-legend">${av?'<div class="hc l4"></div> contido · <div class="hc slip"></div> desvio':'<div class="hc"></div> não feito · <div class="hc l4"></div> feito · <div class="hc skipc"></div> pausado'}</div>
+    <div class="sep"></div>
+    <div style="display:flex;gap:6px">
+      <button class="btn ghost full" onclick="openEditHabit('${h.id}')">✎ EDITAR</button>
+      <button class="btn danger full" onclick="deleteHabit('${h.id}')">✕ EXCLUIR</button>
+    </div>
+    <button class="btn ghost full" style="margin-top:6px" onclick="closeHabitSheet()">FECHAR</button>`;
+  document.getElementById('habitOverlay').classList.add('show');
 }
 function closeHabitSheet(){document.getElementById('habitOverlay').classList.remove('show')}
 
