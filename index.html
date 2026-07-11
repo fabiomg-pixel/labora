@@ -326,11 +326,12 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;
   background:var(--bg2);cursor:pointer;transition:.1s;line-height:1}
 .em-btn.sel{border-color:var(--green-d);background:var(--green-dim)}
 
-/* ── CHARACTER CREATION ────────────── */
-#charCreate{position:fixed;inset:0;background:var(--bg);z-index:300;
+/* ── AUTH / CHARACTER CREATION ──────── */
+#authScreen,#charCreate{position:fixed;inset:0;background:var(--bg);z-index:300;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:20px;overflow-y:auto}
-#charCreate.hide{display:none}
+#authScreen{z-index:350}
+#authScreen.hide,#charCreate.hide{display:none}
 .cc-wrap{width:100%;max-width:420px}
 .cc-pre{font-size:9px;color:var(--txt3);letter-spacing:.15em;text-transform:uppercase;margin-bottom:6px}
 .cc-title{font-size:20px;font-weight:700;color:var(--green);text-transform:uppercase;
@@ -358,6 +359,31 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;
 </style>
 </head>
 <body>
+
+<!-- ── AUTH SCREEN ───────────────────── -->
+<div id="authScreen" class="hide">
+  <div class="cc-wrap">
+    <div class="cc-pre">// LABORA v1.0 — SISTEMA DE PESQUISA</div>
+    <div class="cc-title cursor-blink">ACESSO AO SISTEMA</div>
+    <div class="cc-sub">// Entre ou crie sua conta para sincronizar entre dispositivos</div>
+    <div class="cc-box">
+      <div class="field">
+        <label>// EMAIL DO PESQUISADOR</label>
+        <input type="email" id="authEmail" placeholder="nome@instituicao.br" autocomplete="email" spellcheck="false">
+      </div>
+      <div class="field">
+        <label>// SENHA DE ACESSO</label>
+        <input type="password" id="authPwd" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div class="cc-err" id="authErr"></div>
+    </div>
+    <button id="authSigninBtn" class="btn g full" onclick="doSignIn()">▶ ENTRAR NO SISTEMA</button>
+    <button id="authSignupBtn" class="btn ghost full" onclick="doSignUp()" style="margin-top:8px">▶ CRIAR CONTA DE PESQUISADOR</button>
+    <div style="text-align:center;margin-top:14px;font-size:9px;color:var(--txt3);line-height:1.6">
+      // seus dados são sincronizados em qualquer navegador<br>// e dispositivo em tempo real
+    </div>
+  </div>
+</div>
 
 <!-- ── CHARACTER CREATION ──────────── -->
 <div id="charCreate">
@@ -412,6 +438,135 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;
 <div id="toast"></div>
 
 <script>
+// ─────────────────────────────────────────────────────────
+//  SUPABASE CONFIG — preencha com dados do seu projeto
+// ─────────────────────────────────────────────────────────
+const SB_URL=''; // ex: 'https://abcxyz.supabase.co'
+const SB_KEY=''; // anon/public key
+const SB_ON=!!(SB_URL&&SB_KEY);
+
+// ─────────────────────────────────────────────────────────
+//  AUTH & SYNC
+// ─────────────────────────────────────────────────────────
+let _sess=null;
+function loadSess(){try{_sess=JSON.parse(localStorage.getItem('labora_sess')||'null');}catch(e){_sess=null;}return _sess}
+function saveSess(s){_sess=s;s?localStorage.setItem('labora_sess',JSON.stringify(s)):localStorage.removeItem('labora_sess')}
+async function sbFetch(path,opts={}){
+  const r=await fetch(SB_URL+path,{...opts,headers:{'apikey':SB_KEY,'Content-Type':'application/json','Authorization':'Bearer '+(_sess?.at||SB_KEY),...(opts.headers||{})}});
+  const b=await r.json().catch(()=>null);
+  if(!r.ok)throw new Error(b?.error_description||b?.message||'Erro '+r.status);
+  return b;
+}
+function setAuthBusy(on){
+  ['authSigninBtn','authSignupBtn'].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=on;});
+  if(on){const e=document.getElementById('authErr');if(e)e.textContent='// conectando...';}
+}
+async function doSignIn(){
+  const email=(document.getElementById('authEmail').value||'').trim();
+  const pwd=document.getElementById('authPwd').value;
+  const errEl=document.getElementById('authErr');errEl.textContent='';
+  if(!email||!pwd){errEl.textContent='// ERRO: Preencha email e senha.';return}
+  setAuthBusy(true);
+  try{
+    const d=await sbFetch('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password:pwd})});
+    saveSess({at:d.access_token,rt:d.refresh_token,uid:d.user.id,exp:Date.now()+d.expires_in*1000});
+    await afterAuth();
+  }catch(e){document.getElementById('authErr').textContent='// ERRO: '+e.message;}
+  setAuthBusy(false);
+}
+async function doSignUp(){
+  const email=(document.getElementById('authEmail').value||'').trim();
+  const pwd=document.getElementById('authPwd').value;
+  const errEl=document.getElementById('authErr');errEl.textContent='';
+  if(!email||!pwd){errEl.textContent='// ERRO: Preencha email e senha.';return}
+  if(pwd.length<6){errEl.textContent='// ERRO: Senha mín. 6 caracteres.';return}
+  setAuthBusy(true);
+  try{
+    await sbFetch('/auth/v1/signup',{method:'POST',body:JSON.stringify({email,password:pwd})});
+    const d=await sbFetch('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password:pwd})});
+    saveSess({at:d.access_token,rt:d.refresh_token,uid:d.user.id,exp:Date.now()+d.expires_in*1000});
+    await afterAuth();
+  }catch(e){
+    const m=e.message||'';
+    const errEl2=document.getElementById('authErr');
+    if(m.toLowerCase().includes('confirm')){
+      errEl2.style.color='var(--amber)';errEl2.textContent='// Confirme seu email e entre novamente.';
+    }else{errEl2.textContent='// ERRO: '+m;}
+  }
+  setAuthBusy(false);
+}
+async function afterAuth(){
+  await loadFromCloud();
+  document.getElementById('authScreen').classList.add('hide');
+  if(state.character&&state.character.name){
+    document.getElementById('charCreate').classList.add('hide');
+    document.getElementById('app').classList.remove('hide');
+    document.getElementById('fab').classList.remove('hide');
+    render();
+  }else{
+    document.getElementById('charCreate').classList.remove('hide');
+    document.getElementById('fab').classList.add('hide');
+    renderCharCreate();
+  }
+}
+async function loadFromCloud(){
+  if(!_sess)return;
+  try{
+    const rows=await sbFetch('/rest/v1/labora_states?user_id=eq.'+_sess.uid+'&select=state,updated_at',{headers:{Accept:'application/json'}});
+    if(rows&&rows.length>0){
+      const cloudTs=new Date(rows[0].updated_at).getTime();
+      if(cloudTs>(state.updatedAt||0)){
+        Object.assign(state,rows[0].state);migrateState();
+        localStorage.setItem('labora_v1',JSON.stringify(state));
+      }
+    }
+  }catch(e){/* offline — usa estado local */}
+}
+let _syncT=null;
+function syncToCloud(){
+  if(!SB_ON||!_sess)return;
+  clearTimeout(_syncT);
+  _syncT=setTimeout(async()=>{
+    try{await sbFetch('/rest/v1/labora_states',{method:'POST',
+      headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},
+      body:JSON.stringify({user_id:_sess.uid,state,updated_at:new Date().toISOString()})});}
+    catch(e){/* offline */}
+  },2000);
+}
+async function doSignOut(){
+  if(!confirm('Sair do sistema? Seus dados permanecem salvos na nuvem.'))return;
+  try{await sbFetch('/auth/v1/logout',{method:'POST'});}catch(e){}
+  saveSess(null);location.reload();
+}
+function showAuthScreen(){
+  document.getElementById('authScreen').classList.remove('hide');
+  document.getElementById('charCreate').classList.add('hide');
+  document.getElementById('app').classList.add('hide');
+  document.getElementById('fab').classList.add('hide');
+}
+async function initAuth(){
+  loadSess();
+  if(!_sess){showAuthScreen();return}
+  if(_sess.exp<Date.now()+5*60*1000){
+    try{
+      const d=await sbFetch('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:_sess.rt})});
+      saveSess({..._sess,at:d.access_token,rt:d.refresh_token,exp:Date.now()+d.expires_in*1000});
+    }catch(e){saveSess(null);showAuthScreen();return}
+  }
+  await afterAuth();
+}
+function migrateState(){
+  if(!state.character)state.character={name:'',spec:'',created:0};
+  if(!state.daily)state.daily={};
+  if(!state.slips)state.slips={};
+  if(!state.credits)state.credits=0;
+  if(!state.upgrades)state.upgrades={};
+  if(!state.questsCollected)state.questsCollected={daily:{},weekly:{},story:{}};
+  if(!state.questsCollected.daily)state.questsCollected.daily={};
+  if(!state.questsCollected.weekly)state.questsCollected.weekly={};
+  if(!state.questsCollected.story)state.questsCollected.story={};
+}
+
 // ─────────────────────────────────────────────────────────
 //  CONSTANTS
 // ─────────────────────────────────────────────────────────
@@ -480,17 +635,9 @@ let state=JSON.parse(localStorage.getItem('labora_v1')||'null')||{
   questsCollected:{daily:{},weekly:{},story:{}},
   updatedAt:0
 };
-if(!state.character)state.character={name:'',spec:'',created:0};
-if(!state.daily)state.daily={};
-if(!state.slips)state.slips={};
-if(!state.credits)state.credits=0;
-if(!state.upgrades)state.upgrades={};
-if(!state.questsCollected)state.questsCollected={daily:{},weekly:{},story:{}};
-if(!state.questsCollected.daily)state.questsCollected.daily={};
-if(!state.questsCollected.weekly)state.questsCollected.weekly={};
-if(!state.questsCollected.story)state.questsCollected.story={};
+migrateState();
 
-function save(){state.updatedAt=Date.now();localStorage.setItem('labora_v1',JSON.stringify(state));_gc=null}
+function save(){state.updatedAt=Date.now();localStorage.setItem('labora_v1',JSON.stringify(state));_gc=null;syncToCloud()}
 const esc=s=>String(s==null?'':s).replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
 const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const todayKey=()=>ymd(new Date());
@@ -1071,6 +1218,17 @@ function renderArquivo(){
     });
   }
 
+  // Account section
+  if(SB_ON){
+    const synced=_sess?'🔒 CONTA CONECTADA — SYNC ATIVO':'⚠ SESSÃO EXPIRADA';
+    html+=`<div class="sec" style="margin-top:4px">CONTA</div>
+    <div class="tc anim-in" style="animation-delay:.18s">
+      <div style="font-size:9px;color:var(--txt3);letter-spacing:.07em;margin-bottom:6px">// AUTENTICAÇÃO SUPABASE</div>
+      <div style="font-size:11px;color:${_sess?'var(--cyan)':'var(--amber)'};margin-bottom:10px">${synced}</div>
+      ${_sess?`<button class="btn danger full" onclick="doSignOut()" style="margin-top:0">▶ SAIR DO SISTEMA</button>`:''}
+    </div>`;
+  }
+
   // Wellbeing mood quick entry
   const today=todayKey();const mood=(state.daily[today]?.mood)||0;
   html+=`<div class="sec" style="margin-top:4px">CADERNO DO DIA</div>
@@ -1336,14 +1494,19 @@ setInterval(()=>{
 // ─────────────────────────────────────────────────────────
 //  INIT
 // ─────────────────────────────────────────────────────────
-if(state.character&&state.character.name){
-  document.getElementById('charCreate').classList.add('hide');
-  document.getElementById('app').classList.remove('hide');
-  render();
+if(SB_ON){
+  initAuth();
 }else{
-  document.getElementById('app').classList.add('hide');
-  document.getElementById('fab').classList.add('hide');
-  renderCharCreate();
+  document.getElementById('authScreen').classList.add('hide');
+  if(state.character&&state.character.name){
+    document.getElementById('charCreate').classList.add('hide');
+    document.getElementById('app').classList.remove('hide');
+    render();
+  }else{
+    document.getElementById('app').classList.add('hide');
+    document.getElementById('fab').classList.add('hide');
+    renderCharCreate();
+  }
 }
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
