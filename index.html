@@ -351,6 +351,42 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;
 .spec-bonus{font-size:9px;color:var(--txt2);margin-top:3px;line-height:1.3}
 .cc-err{font-size:10px;color:var(--red);margin-top:6px;min-height:14px;text-transform:uppercase;letter-spacing:.04em}
 
+/* ── WELLBEING / STATUS ────────────── */
+.wb-sec{font-size:9px;font-weight:700;color:var(--txt3);letter-spacing:.1em;
+  text-transform:uppercase;margin:14px 0 7px;display:flex;align-items:center;gap:8px}
+.wb-sec::after{content:'';flex:1;height:1px;background:var(--line)}
+.wb-card{background:var(--card);border:1px solid var(--line);border-radius:3px;padding:13px 14px;margin-bottom:9px}
+.wb-card.filled{border-color:var(--green-d)}
+.wb-title{font-size:10px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.wb-face-row{display:flex;gap:5px}
+.wb-face{flex:1;font-size:22px;padding:8px 0;border:1px solid var(--line);background:var(--bg2);
+  border-radius:3px;cursor:pointer;transition:.1s;filter:grayscale(.6);opacity:.55;line-height:1;text-align:center}
+.wb-face.sel{border-color:var(--green-d);background:var(--green-dim);filter:none;opacity:1}
+.wb-face:active{transform:scale(.95)}
+.wb-stepper{display:flex;align-items:center;gap:10px;margin-top:9px}
+.wb-stepper button{width:36px;height:36px;border:1px solid var(--line);background:var(--bg2);
+  color:var(--white);font-size:18px;border-radius:3px;cursor:pointer;font-family:var(--mono)}
+.wb-stepper button:active{background:var(--card2)}
+.wb-stepper span{font-size:16px;font-weight:700;color:var(--white);min-width:52px;text-align:center}
+.wb-tag-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.wb-tag{padding:4px 10px;border:1px solid var(--line);border-radius:2px;background:var(--bg2);
+  color:var(--txt2);font-size:10px;font-weight:700;letter-spacing:.03em;cursor:pointer;font-family:var(--mono)}
+.wb-tag.sel{border-color:var(--green-d);background:var(--green-dim);color:var(--green)}
+.wb-note{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:3px;
+  padding:8px 10px;color:var(--white);font-family:var(--mono);font-size:11px;
+  margin-top:9px;outline:none;transition:.15s;resize:none}
+.wb-note:focus{border-color:var(--green-d)}
+.wb-stat-row{display:flex;gap:7px;margin-bottom:10px}
+.wb-stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:3px;
+  padding:9px 11px;text-align:center}
+.wb-stat .v{font-size:20px;font-weight:700;color:var(--white);line-height:1}
+.wb-stat .l{font-size:8px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
+.wb-stat.g .v{color:var(--green)}
+.wb-stat.a .v{color:var(--amber)}
+.wb-trend{display:flex;gap:3px;align-items:flex-end;height:55px;margin-top:10px}
+.wb-tbar{flex:1;background:var(--green-dim);border-radius:1px;min-height:3px}
+.wb-tlbl{font-size:8px;color:var(--txt3);text-align:center;margin-top:3px}
+
 /* ── TOAST ─────────────────────────── */
 #toast{position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-80px);
   background:var(--card2);border:1px solid var(--green-d);border-radius:3px;
@@ -403,6 +439,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;
     <button class="tab active" data-view="bancada">BANCADA</button>
     <button class="tab" data-view="carreira">CARREIRA</button>
     <button class="tab" data-view="missoes" id="tabMissoes">MISSÕES</button>
+    <button class="tab" data-view="status">STATUS</button>
     <button class="tab" data-view="arquivo">ARQUIVO</button>
   </nav>
 </div>
@@ -485,6 +522,11 @@ function migrateState(){
   if(!state.questsCollected.daily)state.questsCollected.daily={};
   if(!state.questsCollected.weekly)state.questsCollected.weekly={};
   if(!state.questsCollected.story)state.questsCollected.story={};
+  // migrate old daily format: mood was a plain number, now is {score,tags,note,_ts}
+  for(const k in state.daily){
+    const d=state.daily[k];
+    if(typeof d.mood==='number'){d.mood={score:d.mood,tags:[],note:'',_ts:d._ts||Date.now()};delete d._ts;}
+  }
 }
 
 // ─────────────────────────────────────────────────────────
@@ -1150,25 +1192,136 @@ function renderArquivo(){
     </div>`;
   }
 
-  // Wellbeing mood quick entry
-  const today=todayKey();const mood=(state.daily[today]?.mood)||0;
-  html+=`<div class="sec" style="margin-top:4px">CADERNO DO DIA</div>
-  <div class="tc anim-in">
-    <div style="font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">// REGISTRO DE HUMOR</div>
-    <div style="display:flex;gap:6px">
-      ${['😣','😕','😐','🙂','😄'].map((f,i)=>`<button onclick="setMood(${i+1})" style="flex:1;font-size:20px;padding:7px 0;border:1px solid ${mood===i+1?'var(--green-d)':'var(--line)'};background:${mood===i+1?'var(--green-dim)':'var(--bg2)'};border-radius:3px;cursor:pointer;filter:${mood===i+1?'none':'grayscale(.5)'};opacity:${mood===i+1?1:.65};transition:.1s">${f}</button>`).join('')}
-    </div>
+  html+=`<div class="sec" style="margin-top:4px">STATUS FÍSICO</div>
+  <div class="tc anim-in" style="animation-delay:.2s">
+    <div style="font-size:9px;color:var(--txt3);letter-spacing:.07em;margin-bottom:6px">// REGISTRO DIÁRIO DE BEM-ESTAR</div>
+    <button class="btn g full" onclick="document.querySelector('.tab[data-view=status]').click()" style="margin-top:0">▶ ABRIR PAINEL STATUS</button>
   </div>`;
 
   document.getElementById('content').innerHTML=html;
 }
-function setMood(v){
-  if(!state.daily)state.daily={};
-  const k=todayKey();
-  if(!state.daily[k])state.daily[k]={};
-  state.daily[k].mood=v;
-  state.daily[k]._ts=Date.now();
-  save();render();flashSync('HUMOR REGISTRADO');
+// ─────────────────────────────────────────────────────────
+//  WELLBEING DATA FUNCTIONS
+// ─────────────────────────────────────────────────────────
+const FACES_W=['😣','😕','😐','🙂','😄'];
+const MOOD_TAGS_W=['Estresse','Carga pesada','Trabalho noturno','Ansiedade','Conflito','Boa notícia','Tempo sozinho','Social'];
+const DIET_TAGS_W=['Comi bem','Exagerei','Pulei refeição','Muito açúcar','Álcool','Fora de casa'];
+const HEALTH_TAGS_W=['Gripe/resfriado','Dor de cabeça','Dor','Cansaço','Indisposição','Alergia','Cólica','Estômago'];
+
+function ensureDaily(date){if(!state.daily)state.daily={};if(!state.daily[date])state.daily[date]={};return state.daily[date]}
+function setSleepQuality(q){const e=ensureDaily(todayKey());e.sleep=Object.assign({quality:0,hours:7.5},e.sleep,{quality:q,_ts:Date.now()});save();renderStatus()}
+function setSleepHours(delta){const e=ensureDaily(todayKey());const base=(e.sleep&&e.sleep.hours!=null)?e.sleep.hours:7.5;const h=Math.max(0,Math.min(14,Math.round((base+delta)*2)/2));e.sleep=Object.assign({quality:0,hours:7.5},e.sleep,{hours:h,_ts:Date.now()});save();renderStatus()}
+function setMood(s){const e=ensureDaily(todayKey());e.mood=Object.assign({score:0,tags:[],note:''},e.mood,{score:s,_ts:Date.now()});save();renderStatus()}
+function setMoodNote(v){const e=ensureDaily(todayKey());e.mood=Object.assign({score:0,tags:[],note:''},e.mood,{note:v,_ts:Date.now()});save()}
+function toggleMoodTag(t){const e=ensureDaily(todayKey());const m=Object.assign({score:0,tags:[],note:''},e.mood);m.tags=(m.tags||[]).slice();const i=m.tags.indexOf(t);if(i>=0)m.tags.splice(i,1);else m.tags.push(t);m._ts=Date.now();e.mood=m;save();renderStatus()}
+function setDiet(s){const e=ensureDaily(todayKey());e.diet=Object.assign({score:0,tags:[],note:''},e.diet,{score:s,_ts:Date.now()});save();renderStatus()}
+function setDietNote(v){const e=ensureDaily(todayKey());e.diet=Object.assign({score:0,tags:[],note:''},e.diet,{note:v,_ts:Date.now()});save()}
+function toggleDietTag(t){const e=ensureDaily(todayKey());const d=Object.assign({score:0,tags:[],note:''},e.diet);d.tags=(d.tags||[]).slice();const i=d.tags.indexOf(t);if(i>=0)d.tags.splice(i,1);else d.tags.push(t);d._ts=Date.now();e.diet=d;save();renderStatus()}
+function setHealth(s){const e=ensureDaily(todayKey());e.health=Object.assign({score:0,tags:[],note:''},e.health,{score:s,_ts:Date.now()});save();renderStatus()}
+function setHealthNote(v){const e=ensureDaily(todayKey());e.health=Object.assign({score:0,tags:[],note:''},e.health,{note:v,_ts:Date.now()});save()}
+function toggleHealthTag(t){const e=ensureDaily(todayKey());const d=Object.assign({score:0,tags:[],note:''},e.health);d.tags=(d.tags||[]).slice();const i=d.tags.indexOf(t);if(i>=0)d.tags.splice(i,1);else d.tags.push(t);d._ts=Date.now();e.health=d;save();renderStatus()}
+
+function faceRow(cur,fn){
+  return `<div class="wb-face-row">${FACES_W.map((f,i)=>`<button class="wb-face ${cur===i+1?'sel':''}" onclick="${fn}(${i+1})">${f}</button>`).join('')}</div>`;
+}
+function tagRow(tags,selected,fn){
+  return `<div class="wb-tag-row">${tags.map(t=>`<button class="wb-tag ${(selected||[]).includes(t)?'sel':''}" onclick="${fn}('${t.replace(/'/g,"\\'")}')">${t}</button>`).join('')}</div>`;
+}
+
+// ─────────────────────────────────────────────────────────
+//  RENDER — STATUS (BEM-ESTAR)
+// ─────────────────────────────────────────────────────────
+function renderStatus(){
+  const date=todayKey();
+  const e=(state.daily||{})[date]||{};
+  const sleep=e.sleep||{},mood=e.mood||{},diet=e.diet||{},health=e.health||{};
+  const hrs=(sleep._ts&&sleep.hours!=null)?sleep.hours:null;
+
+  // 30-day averages
+  const daily=state.daily||{};
+  const allDays=Object.keys(daily).sort();
+  const today=date;
+  const recent=d=>(new Date(today)-new Date(d))/86400000<30;
+  const avg=arr=>arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:null;
+  const moodAvg=avg(allDays.filter(d=>recent(d)&&daily[d].mood&&daily[d].mood.score).map(d=>daily[d].mood.score));
+  const sleepQ=avg(allDays.filter(d=>recent(d)&&daily[d].sleep&&daily[d].sleep.quality).map(d=>daily[d].sleep.quality));
+  const sleepH=avg(allDays.filter(d=>recent(d)&&daily[d].sleep&&daily[d].sleep._ts&&daily[d].sleep.hours!=null).map(d=>daily[d].sleep.hours));
+  const healthAvg=avg(allDays.filter(d=>recent(d)&&daily[d].health&&daily[d].health.score).map(d=>daily[d].health.score));
+  const fmt=v=>v==null?'—':v.toFixed(1);
+
+  // 21-day mood trend
+  const trend=[];
+  for(let i=20;i>=0;i--){const dt=new Date();dt.setDate(dt.getDate()-i);const k=ymd(dt);
+    trend.push((daily[k]&&daily[k].mood)?daily[k].mood.score:null);}
+  const maxT=5;
+  const trendBars=trend.map((v,i)=>{
+    const h=v?Math.round(v/maxT*100):0;
+    const isToday=i===20;
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+      <div class="wb-tbar" style="height:${h}%;background:${isToday?'var(--green)':'var(--green-dim)'}"></div>
+      ${isToday?`<div class="wb-tlbl" style="color:var(--green)">●</div>`:`<div class="wb-tlbl">${''}</div>`}
+    </div>`;}).join('');
+
+  const daysLogged=allDays.filter(d=>recent(d)&&(daily[d].mood||daily[d].sleep||daily[d].health)).length;
+
+  let html='';
+
+  // ── Estatísticas 30d (only if data exists)
+  if(daysLogged>=2){
+    html+=`<div class="wb-sec">MÉDIA — ÚLTIMOS 30 DIAS · ${daysLogged}d registrados</div>
+    <div class="wb-stat-row">
+      <div class="wb-stat g"><div class="v">${fmt(moodAvg)}</div><div class="l">Humor</div></div>
+      <div class="wb-stat g"><div class="v">${fmt(sleepQ)}</div><div class="l">Qualid. Sono</div></div>
+      <div class="wb-stat a"><div class="v">${sleepH!=null?fmt(sleepH)+'h':'—'}</div><div class="l">Horas Sono</div></div>
+      <div class="wb-stat g"><div class="v">${fmt(healthAvg)}</div><div class="l">Saúde</div></div>
+    </div>
+    <div class="wb-card" style="padding:10px 12px 8px">
+      <div class="wb-title">// TENDÊNCIA HUMOR — 21 DIAS</div>
+      <div class="wb-trend" style="height:55px">${trendBars}</div>
+    </div>`;
+  }
+
+  // ── Check-in de hoje
+  html+=`<div class="wb-sec">CHECK-IN DE HOJE · ${date}</div>`;
+
+  // Sono
+  html+=`<div class="wb-card ${sleep._ts?'filled':''}">
+    <div class="wb-title">🌙 SONO</div>
+    <div style="font-size:9px;color:var(--txt3);margin-bottom:7px">// QUALIDADE DA NOITE</div>
+    ${faceRow(sleep.quality||0,'setSleepQuality')}
+    <div style="font-size:9px;color:var(--txt3);margin:10px 0 0">// HORAS DORMIDAS</div>
+    <div class="wb-stepper">
+      <button onclick="setSleepHours(-0.5)">−</button>
+      <span>${hrs!=null?hrs+'h':'—'}</span>
+      <button onclick="setSleepHours(0.5)">+</button>
+    </div>
+  </div>`;
+
+  // Humor
+  html+=`<div class="wb-card ${mood.score?'filled':''}">
+    <div class="wb-title">😊 HUMOR DO DIA</div>
+    ${faceRow(mood.score||0,'setMood')}
+    ${tagRow(MOOD_TAGS_W,mood.tags||0,'toggleMoodTag')}
+    <textarea class="wb-note" rows="2" placeholder="Alguma eventualidade? (opcional)" oninput="setMoodNote(this.value)" maxlength="140">${esc(mood.note||'')}</textarea>
+  </div>`;
+
+  // Alimentação
+  html+=`<div class="wb-card ${diet.score?'filled':''}">
+    <div class="wb-title">🍽️ ALIMENTAÇÃO</div>
+    ${faceRow(diet.score||0,'setDiet')}
+    ${tagRow(DIET_TAGS_W,diet.tags||0,'toggleDietTag')}
+    <textarea class="wb-note" rows="1" placeholder="Observação (opcional)" oninput="setDietNote(this.value)" maxlength="140">${esc(diet.note||'')}</textarea>
+  </div>`;
+
+  // Saúde
+  html+=`<div class="wb-card ${health.score?'filled':''}">
+    <div class="wb-title">🩹 SAÚDE FÍSICA</div>
+    ${faceRow(health.score||0,'setHealth')}
+    ${tagRow(HEALTH_TAGS_W,health.tags||0,'toggleHealthTag')}
+    <textarea class="wb-note" rows="1" placeholder="Sintoma ou observação (opcional)" oninput="setHealthNote(this.value)" maxlength="140">${esc(health.note||'')}</textarea>
+  </div>`;
+
+  document.getElementById('content').innerHTML=html;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -1178,9 +1331,12 @@ let currentView='bancada';
 function render(){
   updateHeader();
   checkPendingQuests();
+  const fab=document.getElementById('fab');
+  if(fab)fab.style.display=currentView==='status'?'none':'';
   if(currentView==='bancada')renderBancada();
   else if(currentView==='carreira')renderCarreira();
   else if(currentView==='missoes')renderMissoes();
+  else if(currentView==='status')renderStatus();
   else if(currentView==='arquivo')renderArquivo();
 }
 
