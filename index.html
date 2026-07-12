@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#030a03">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -61,7 +61,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;
 #hdr-xpfill{height:100%;background:var(--green);transition:width .9s cubic-bezier(.4,0,.2,1)}
 
 /* ── NAV ───────────────────────────── */
-#nav{display:flex;border-top:1px solid var(--line);background:var(--bg);flex-shrink:0}
+#nav{display:flex;border-top:1px solid var(--line);background:var(--bg);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0px)}
 .tab{flex:1;padding:9px 2px 7px;text-align:center;font-family:var(--mono);font-size:9px;
   font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3);
   cursor:pointer;border:none;background:none;position:relative;transition:.12s}
@@ -70,7 +70,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;
 .tab-badge{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);margin-left:3px;vertical-align:middle;animation:amber-pulse 2s ease-in-out infinite}
 
 /* ── CONTENT ───────────────────────── */
-#content{flex:1;overflow-y:auto;min-height:0;padding:12px 14px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch}
+#content{flex:1;overflow-y:auto;min-height:0;padding:12px 14px 80px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch}
+#content>*{flex-shrink:0}
 #content::-webkit-scrollbar{width:3px}
 #content::-webkit-scrollbar-thumb{background:var(--green-dim);border-radius:2px}
 
@@ -293,7 +294,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;
 .btn:disabled{opacity:.3;cursor:default;pointer-events:none}
 
 /* ── FAB ───────────────────────────── */
-#fab{position:fixed;bottom:62px;right:16px;width:46px;height:46px;border-radius:3px;
+#fab{position:fixed;bottom:calc(62px + env(safe-area-inset-bottom,0px));right:16px;width:46px;height:46px;border-radius:3px;
   background:var(--green);border:none;font-size:22px;color:var(--bg);cursor:pointer;
   z-index:100;display:flex;align-items:center;justify-content:center;
   box-shadow:0 0 20px rgba(57,255,20,.45);font-family:var(--mono);font-weight:700;transition:.1s}
